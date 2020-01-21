@@ -76,6 +76,10 @@ public class YoolooClient {
 				// 1. Schritt Kommado empfangen
 				ServerMessage kommandoMessage = empfangeKommando();
 				System.out.println("[id-x]ClientStatus: " + clientState + "] " + kommandoMessage.toString());
+				if(kommandoMessage.getServerMessageType() == ServerMessage.ServerMessageType.SERVERMESSAGE_ALREADY_LOGGED_IN){
+					System.out.println("Du bist bereits eingeloggt!");
+					System.exit(0);
+				}
 				// 2. Schritt ClientState ggfs aktualisieren (fuer alle neuen Kommandos)
 				ClientState newClientState = kommandoMessage.getNextClientState();
 				if (newClientState != null) {
@@ -87,8 +91,8 @@ public class YoolooClient {
 					// Server fordert Useridentifikation an
 					// Falls User local noch nicht bekannt wird er bestimmt
 					if (newLogin == null || clientState == ClientState.CLIENTSTATE_LOGIN) {
-						// TODO Klasse LoginMessage erweiteren um Interaktives ermitteln des
-						// Spielernames, GameModes, ...)
+						// Spielerdaten vom Server ermitteln
+
 						newLogin = eingabeSpielerDatenFuerLogin(); //Dummy aufruf
 						newLogin = new LoginMessage(spielerName);
 					}

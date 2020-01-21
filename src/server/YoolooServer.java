@@ -7,11 +7,16 @@ package server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.net.InetSocketAddress;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import common.YoolooKartenspiel;
+import messages.ServerMessage;
+import client.YoolooClient;
+import utils.socketutils;
 
 public class YoolooServer {
 
@@ -31,8 +36,8 @@ public class YoolooServer {
 	private ServerSocket serverSocket = null;
 	private boolean serverAktiv = true;
 
-	// private ArrayList<Thread> spielerThreads;
-	private ArrayList<YoolooClientHandler> clientHandlerList;
+	// private LinkedHashMap<Thread> spielerThreads;
+	private LinkedHashMap<String, YoolooClientHandler> clientHandlerList;
 
 	private ExecutorService spielerPool;
 
@@ -62,7 +67,7 @@ public class YoolooServer {
 			// Init
 			serverSocket = new ServerSocket(port);
 			spielerPool = Executors.newCachedThreadPool();
-			clientHandlerList = new ArrayList<YoolooClientHandler>();
+			clientHandlerList = new LinkedHashMap<String, YoolooClientHandler>();
 			System.out.println("Server gestartet - warte auf Spieler");
 
 			while (serverAktiv) {
@@ -71,9 +76,24 @@ public class YoolooServer {
 				// Neue Spieler registrieren
 				try {
 					client = serverSocket.accept();
-					YoolooClientHandler clientHandler = new YoolooClientHandler(this, client);
-					clientHandlerList.add(clientHandler);
-					System.out.println("[YoolooServer] Anzahl verbundene Spieler: " + clientHandlerList.size());
+					String IP = ((InetSocketAddress) client.getRemoteSocketAddress()).getAddress().toString();
+					
+					if(!this.clientHandlerList.containsKey(IP)){
+						YoolooClientHandler clientHandler = new YoolooClientHandler(this, client);
+						clientHandlerList.put(IP, clientHandler);
+						System.out.println("[YoolooServer] Anzahl verbundene Spieler: " + clientHandlerList.size());
+					}else{
+						System.out.println("[YoolooServer] " + IP + " ist bereits angemeldet, lehne Verbindung ab.");
+						ServerMessage loginErr = new ServerMessage(
+													ServerMessage.ServerMessageType.SERVERMESSAGE_ALREADY_LOGGED_IN, 
+													YoolooClient.ClientState.CLIENTSTATE_DISCONNECTED,
+													ServerMessage.ServerMessageResult.SERVER_MESSAGE_RESULT_NOT_OK	
+												);
+						socketutils.sendSerialized(client, loginErr);
+						client.close();
+					}
+
+
 				} catch (IOException e) {
 					System.out.println("Client Verbindung gescheitert");
 					e.printStackTrace();
@@ -85,16 +105,18 @@ public class YoolooServer {
 					// Init Session
 					YoolooSession yoolooSession = new YoolooSession(clientHandlerList.size(), serverGameMode);
 
-					// Starte pro Client einen ClientHandlerTread
-					for (int i = 0; i < clientHandlerList.size(); i++) {
-						YoolooClientHandler ch = clientHandlerList.get(i);
+					// Starte pro Client einen ClientHandlerThread
+					int i = 0;
+					for (Entry<String, YoolooClientHandler> ent : this.clientHandlerList.entrySet()) {
+						YoolooClientHandler ch = ent.getValue();
 						ch.setHandlerID(i);
 						ch.joinSession(yoolooSession);
 						spielerPool.execute(ch); // Start der ClientHandlerThread - Aufruf der Methode run()
+						i++;
 					}
 
 					// nuechste Runde eroeffnen
-					clientHandlerList = new ArrayList<YoolooClientHandler>();
+					clientHandlerList = new LinkedHashMap<String, YoolooClientHandler>();
 				}
 			}
 		} catch (IOException e1) {
