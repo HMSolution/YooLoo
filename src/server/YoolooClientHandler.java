@@ -40,6 +40,10 @@ public class YoolooClientHandler extends Thread {
 	private YoolooSession session;
 	private YoolooSpieler meinSpieler = null;
 	private int clientHandlerId;
+	
+	public static final String ANSI_RESET = "\u001B[0m";
+	public static final String ANSI_RED = "\u001B[31m";
+	public static final String ANSI_GREEN = "\u001B[32m";
 
 	public YoolooClientHandler(YoolooServer yoolooServer, Socket clientSocket) {
 		this.myServer = yoolooServer;
@@ -105,8 +109,16 @@ public class YoolooClientHandler extends Thread {
 							sendeKommando(ServerMessageType.SERVERMESSAGE_SEND_CARD,
 									ClientState.CLIENTSTATE_PLAY_SINGLE_GAME, null, stichNummer);
 							// Neue YoolooKarte in Session ausspielen und Stich abfragen
+							///////Hier wird die YoolooKarte empfangen///////
 							YoolooKarte neueKarte = (YoolooKarte) empfangeVomClient();
 							System.out.println("[ClientHandler" + clientHandlerId + "] Karte empfangen:" + neueKarte);
+							if(meinSpieler.GetGespielteKarten().contains(neueKarte.getWert()))
+							{
+								System.out.println(ANSI_RED + "[ALERT] !!!!!Spielercheat erkannt!!!!! [ALERT]" + ANSI_RESET);
+							}else {
+								System.out.println(ANSI_GREEN + "[VALID] => Played card has been verified [VALID]" + ANSI_RESET);
+								meinSpieler.gespielteKarteHinzufügen(neueKarte);
+							}			
 							YoolooStich currentstich = spieleKarte(stichNummer, neueKarte);
 							// Punkte fuer gespielten Stich ermitteln
 							if (currentstich.getSpielerNummer() == clientHandlerId) {

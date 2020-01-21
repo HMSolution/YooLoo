@@ -4,7 +4,9 @@
 
 package common;
 
+import java.awt.List;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import common.YoolooKartenspiel.Kartenfarbe;
@@ -17,6 +19,7 @@ public class YoolooSpieler implements Serializable {
 	private int clientHandlerId = -1;
 	private int punkte;
 	private YoolooKarte[] aktuelleSortierung;
+	private ArrayList<Integer> gespielteNummern = new ArrayList<Integer>();
 
 	public YoolooSpieler(String name, int maxKartenWert) {
 		this.name = name;
@@ -95,6 +98,16 @@ public class YoolooSpieler implements Serializable {
 	public void stichAuswerten(YoolooStich stich) {
 		System.out.println(stich.toString());
 
+	}
+	
+	public void gespielteKarteHinzufügen(YoolooKarte karte)
+	{
+		gespielteNummern.add(karte.getWert());
+	}
+	
+	public ArrayList<Integer> GetGespielteKarten()
+	{
+		return gespielteNummern;
 	}
 
 }
