@@ -102,14 +102,14 @@ public class YoolooClientHandler extends Thread {
 					switch (session.getGamemode()) {
 					case GAMEMODE_SINGLE_GAME:
 						// Triggersequenz zur Abfrage der einzelnen Karten des Spielers
-						ArrayList<YoolooKarte> Karten = new ArrayList<YoolooKarte>();
+						ArrayList<Integer> Karten = new ArrayList<Integer>();
 						for (int stichNummer = 0; stichNummer < YoolooKartenspiel.maxKartenWert; stichNummer++) {
 							sendeKommando(ServerMessageType.SERVERMESSAGE_SEND_CARD,
 									ClientState.CLIENTSTATE_PLAY_SINGLE_GAME, null, stichNummer);
 							// Neue YoolooKarte in Session ausspielen und Stich abfragen
 							YoolooKarte neueKarte = (YoolooKarte) empfangeVomClient();
 							System.out.println("[ClientHandler" + clientHandlerId + "] Karte empfangen:" + neueKarte);
-							Karten.add(neueKarte);
+							Karten.add(neueKarte.getWert());
 							YoolooStich currentstich = spieleKarte(stichNummer, neueKarte);
 							// Punkte fuer gespielten Stich ermitteln
 							if (currentstich.getSpielerNummer() == clientHandlerId) {
@@ -196,9 +196,10 @@ public class YoolooClientHandler extends Thread {
 	}
 
 	private void registriereSpielerInSession(YoolooSpieler meinSpieler) {
-		System.out
-				.println("[ClientHandler" + clientHandlerId + "] registriereSpielerInSession " + meinSpieler.getName());
-		session.getAktuellesSpiel().spielerRegistrieren(meinSpieler);
+		System.out.println("[ClientHandler" + clientHandlerId + "] registriereSpielerInSession " + meinSpieler.getName());
+		ArrayList<Integer> KartenReihenfolge = this.myServer.getCardOrder(this.meinSpieler.getName());
+
+		session.getAktuellesSpiel().spielerRegistrieren(meinSpieler, KartenReihenfolge);
 	}
 
 	/**

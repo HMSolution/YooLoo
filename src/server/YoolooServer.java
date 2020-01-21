@@ -37,7 +37,7 @@ public class YoolooServer {
 
 	private ServerSocket serverSocket = null;
 	private boolean serverAktiv = true;
-	private LinkedHashMap<String, ArrayList<YoolooKarte>> cardMap;
+	private LinkedHashMap<String, ArrayList<Integer>> cardMap;
 
 	// private LinkedHashMap<Thread> spielerThreads;
 	private LinkedHashMap<String, YoolooClientHandler> clientHandlerList;
@@ -140,8 +140,16 @@ public class YoolooServer {
 			System.out.println("Servercode falsch");
 		}
 	}
-	public void saveCardOrder(ArrayList<YoolooKarte> order, String clientName) {
+	public void saveCardOrder(ArrayList<Integer> order, String clientName) {
 		System.out.println("[~] Speichere Kartenabfolge für " + clientName);
 		cardMap.put(clientName, order);
+	}
+	public ArrayList<Integer> getCardOrder(String clientName) {
+		if(this.cardMap.containsKey(clientName)){
+			System.out.println("[>] " + clientName + " ist bekannt, sende letzte Kartenreihenfolge.");
+			return this.cardMap.get(clientName);
+		}else{
+			return new ArrayList<Integer>();
+		}
 	}
 }
