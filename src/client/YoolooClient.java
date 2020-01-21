@@ -21,7 +21,7 @@ import messages.ServerMessage;
 
 public class YoolooClient {
 
-	private String serverHostname = "localhost";
+	private String serverHostname = "10.101.136.24";
 	private int serverPort = 44137;
 	private Socket serverSocket = null;
 	private ObjectInputStream ois = null;
@@ -33,6 +33,10 @@ public class YoolooClient {
 	private LoginMessage newLogin = null;
 	private YoolooSpieler meinSpieler;
 	private YoolooStich[] spielVerlauf = null;
+	
+	public static final String ANSI_RESET = "\u001B[0m";
+	public static final String ANSI_RED = "\u001B[31m";
+	public static final String ANSI_GREEN = "\u001B[32m";
 
 	public YoolooClient() {
 		super();
@@ -103,7 +107,9 @@ public class YoolooClient {
 					           // basic version: wechsel zu ClientState Disconnected thread beenden
 				case SERVERMESSAGE_CHANGE_STATE:
 				break ;
-				
+				case SERVERMESSAGE_PLAYER_CHEAT:
+					System.out.println(ANSI_RED + "[ALERT] => Du bist beim Cheaten erwischt worden. Deswegen wirst du aus der Sitzung ausgeschlossen! [ALERT]" + ANSI_RESET);
+					break;	
 				default:
 					break;
 				}
@@ -158,7 +164,7 @@ public class YoolooClient {
 	}
 
 	private void spieleKarteAus(int i) throws IOException {
-		oos.writeObject(meinSpieler.getAktuelleSortierung()[i]);
+		oos.writeObject(meinSpieler.getAktuelleSortierung()[10]);
 	}
 
 	// Methoden fuer Datenempfang vom Server / ClientHandler

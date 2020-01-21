@@ -11,7 +11,12 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import client.YoolooClient.ClientState;
 import common.YoolooKartenspiel;
+import messages.ServerMessage;
+import messages.ServerMessage.ServerMessageResult;
+import messages.ServerMessage.ServerMessageType;
+import utils.socketutils;
 
 public class YoolooServer {
 
@@ -30,6 +35,7 @@ public class YoolooServer {
 
 	private ServerSocket serverSocket = null;
 	private boolean serverAktiv = true;
+	socketutils utils = new socketutils();
 
 	// private ArrayList<Thread> spielerThreads;
 	private ArrayList<YoolooClientHandler> clientHandlerList;
@@ -79,6 +85,7 @@ public class YoolooServer {
 					e.printStackTrace();
 				}
 
+				
 				// Neue Session starten wenn ausreichend Spieler verbunden sind!
 				if (clientHandlerList.size() >= Math.min(spielerProRunde,
 						YoolooKartenspiel.Kartenfarbe.values().length)) {
@@ -103,6 +110,18 @@ public class YoolooServer {
 			e1.printStackTrace();
 		}
 
+	}
+	
+	public void sendCheatMessageToAllClients(YoolooClientHandler handlerToExpell)
+	{
+		clientHandlerList.remove(handlerToExpell);
+		ServerMessage notificationForPlayerCheating = new ServerMessage(ServerMessageType.SERVERMESSAGE_NOTIFY_CHEAT,
+				ClientState.CLIENTSTATE_NULL,
+				ServerMessageResult.SERVER_MESSAGE_RESULT_OK);
+	   for(int i = 0; i < clientHandlerList.size(); i++)
+	   {
+		   utils.sendSerialized(clientHandlerList.get(i).getSocket(), notificationForPlayerCheating);
+	   }
 	}
 
 	// TODO Dummy zur Serverterminierung noch nicht funktional
