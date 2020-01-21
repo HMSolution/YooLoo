@@ -64,6 +64,11 @@ public class YoolooClient {
 				failedOnce = true;	
 			}
 
+			System.out.println("Bitte gebe die Server IP/Hostname ein:");
+			System.out.print(">> ");
+			this.serverHostname = temporary.nextLine();
+
+
 			System.out.println("Logge als " + this.spielerName + " ein");
 
 			temporary.close();
@@ -230,6 +235,9 @@ public class YoolooClient {
 	private LoginMessage eingabeSpielerDatenFuerLogin() {
 		// TODO Spielername, GameMode und ggfs mehr ermitteln
 		return null;
+	}
+	public String getDisplayName() {
+		return this.spielerName;
 	}
 
 	public void ausgabeKartenSet() {

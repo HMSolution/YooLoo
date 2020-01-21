@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,6 +17,7 @@ import java.util.concurrent.Executors;
 import common.YoolooKartenspiel;
 import messages.ServerMessage;
 import client.YoolooClient;
+import common.YoolooKarte;
 import utils.socketutils;
 
 public class YoolooServer {
@@ -35,6 +37,7 @@ public class YoolooServer {
 
 	private ServerSocket serverSocket = null;
 	private boolean serverAktiv = true;
+	private LinkedHashMap<String, ArrayList<YoolooKarte>> cardMap;
 
 	// private LinkedHashMap<Thread> spielerThreads;
 	private LinkedHashMap<String, YoolooClientHandler> clientHandlerList;
@@ -136,5 +139,9 @@ public class YoolooServer {
 		} else {
 			System.out.println("Servercode falsch");
 		}
+	}
+	public void saveCardOrder(ArrayList<YoolooKarte> order, String clientName) {
+		System.out.println("[~] Speichere Kartenabfolge für " + clientName);
+		cardMap.put(clientName, order);
 	}
 }
