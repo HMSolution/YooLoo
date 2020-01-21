@@ -44,6 +44,7 @@ public class YoolooSession {
 			YoolooKarte[] karten = spielplan[stichNummer];
 			for (int spielernummer = 0; spielernummer < spielplan[stichNummer].length; spielernummer++) {
 				if (spielplan[stichNummer][spielernummer] == null) {
+ 					karten = null;
 				}
 			}
 			if (karten != null) {
