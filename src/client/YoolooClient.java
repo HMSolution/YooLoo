@@ -7,6 +7,7 @@ package client;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Scanner;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -29,7 +30,7 @@ public class YoolooClient {
 
 	private ClientState clientState = ClientState.CLIENTSTATE_NULL;
 
-	private String spielerName = "Name" + (System.currentTimeMillis() + "").substring(6);
+	private String spielerName = "";
 	private LoginMessage newLogin = null;
 	private YoolooSpieler meinSpieler;
 	private YoolooStich[] spielVerlauf = null;
@@ -51,6 +52,23 @@ public class YoolooClient {
 	public void startClient() {
 
 		try {
+			// Lese Namen aus stdin //
+			boolean failedOnce = false;
+			System.out.println("Bitte gebe zunächst deinen Namen an:");
+			Scanner temporary = new Scanner(System.in);
+			
+			while(this.spielerName.length() < 4){
+				if(failedOnce) System.out.println("Dein Name muss mindestens 4 Zeichen lang sein.");
+				System.out.print(">> "); 
+				this.spielerName = temporary.nextLine();
+				failedOnce = true;	
+			}
+
+			System.out.println("Logge als " + this.spielerName + " ein");
+
+			temporary.close();
+			//////////////////////////
+
 			clientState = ClientState.CLIENTSTATE_CONNECT;
 			verbindeZumServer();
 
@@ -85,7 +103,7 @@ public class YoolooClient {
 					// sortieren Karten
 					meinSpieler.sortierungFestlegen();
 					ausgabeKartenSet();
-					// ggfs. Spielverlauf löschen
+					// ggfs. Spielverlauf lรถschen
 					spielVerlauf = new YoolooStich[YoolooKartenspiel.maxKartenWert];
 					ClientMessage message = new ClientMessage(ClientMessageType.ClientMessage_OK,
 							"Kartensortierung ist erfolgt!");
