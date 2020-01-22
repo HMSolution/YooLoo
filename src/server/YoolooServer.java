@@ -10,8 +10,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import allgemein.StarterServer;
 import client.YoolooClient.ClientState;
 import common.YoolooKartenspiel;
 import messages.ServerMessage;
@@ -103,31 +101,35 @@ public class YoolooServer {
 						spielerPool.execute(ch); // Start der ClientHandlerThread - Aufruf der Methode run()
 					}
 
+					try {
+						//Pause, da sonst die clienthandler thread werte nicht durchkommen
+						Thread.sleep(1500);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					
+					for(YoolooClientHandler handler : clientHandlerList)
+					{
+						//prüfen ob in den Handlern gecheatet wurde
+						//entsprechend wird ein Restart eingeleitet
+						if(handler.cheated)
+						serverAktiv = false;
+						restart = true;
+					}
+
 					// nuechste Runde eroeffnen
 					clientHandlerList = new ArrayList<YoolooClientHandler>();
 				}
 			}
+			EndSession(543210);
 		} catch (IOException e1) {
 			System.out.println("ServerSocket nicht gebunden");
 			serverAktiv = false;
 			e1.printStackTrace();
 		}
-		restartSession(543210);
 	}
 	
-	public void sendCheatMessageToAllClients(YoolooClientHandler handlerToExpell)
-	{
-		clientHandlerList.remove(handlerToExpell);
-		ServerMessage notificationForPlayerCheating = new ServerMessage(ServerMessageType.SERVERMESSAGE_NOTIFY_CHEAT,
-				ClientState.CLIENTSTATE_NULL,
-				ServerMessageResult.SERVER_MESSAGE_RESULT_OK);
-	   for(int i = 0; i < clientHandlerList.size(); i++)
-	   {
-		   socketUtils.sendSerialized(clientHandlerList.get(i).getSocket(), notificationForPlayerCheating);
-	   }
-	}
-	
-	public synchronized void restartSession(int code)
+	public synchronized void EndSession(int code)
 	{
 		if(code == 543210)
 		{
@@ -136,21 +138,26 @@ public class YoolooServer {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		for(YoolooClientHandler handler : clientHandlerList)
-		{
-			handler.Terminate();
-		}
+		sendCheatMessageToAllClients();
 		try {
 			serverSocket.close();
 		} catch (IOException e) {
-			System.out.println("SERVERSOCKER KONNTE NICHT GESCHLOSSEN WERDEN");
+			System.out.println("SERVERSOCKET KONNTE NICHT GESCHLOSSEN WERDEN");
 		}
-		this.restart = true;
-		this.serverAktiv = false;
-
 		} else {
 			System.out.println("Servercode falsch");
 		}
+	}
+
+	public void sendCheatMessageToAllClients()
+	{
+		ServerMessage notificationForPlayerCheating = new ServerMessage(ServerMessageType.SERVERMESSAGE_NOTIFY_CHEAT,
+				ClientState.CLIENTSTATE_NULL,
+				ServerMessageResult.SERVER_MESSAGE_RESULT_OK);
+	   for(int i = 0; i < clientHandlerList.size(); i++)
+	   {
+		   	SocketUtils.sendSerialized(clientHandlerList.get(i).getSocket(), notificationForPlayerCheating);
+	   }
 	}
 
 	// TODO Dummy zur Serverterminierung noch nicht funktional

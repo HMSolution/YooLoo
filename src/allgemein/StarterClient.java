@@ -15,6 +15,5 @@ public class StarterClient {
 		int port = 44137;
 		YoolooClient client = new YoolooClient(hostname, port);
 		client.startClient();
-
 	}
 }

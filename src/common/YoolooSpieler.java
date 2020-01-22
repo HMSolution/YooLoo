@@ -3,8 +3,6 @@
 //  V0.106  |200107| cic |    -   | add history of change
 
 package common;
-
-import java.awt.List;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +40,7 @@ public class YoolooSpieler implements Serializable {
 		aktuelleSortierung = neueSortierung;
 	}
 	
+	// Cheat Testzweck
 	public void sortierungAufZehnFestlegen() {
 		YoolooKarte[] neueSortierung = new YoolooKarte[this.aktuelleSortierung.length];
 		for (int i = 0; i < neueSortierung.length; i++) {
@@ -107,7 +106,6 @@ public class YoolooSpieler implements Serializable {
 
 	public void stichAuswerten(YoolooStich stich) {
 		System.out.println(stich.toString());
-
 	}
 	
 	public void gespielteKarteHinzufügen(YoolooKarte karte)

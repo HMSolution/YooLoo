@@ -213,7 +213,7 @@ public class YoolooClient {
 		} catch (Exception e) {
 			if(e instanceof ClassCastException)
 			{
-				System.out.println(ANSI_RED + "[ALERT] => Spiel von Server abgebrochen. [ALERT]" + ANSI_RESET);
+				System.out.println(ANSI_RED + "[ALERT] => Das Spiel wurde vom Server abgebrochen. [ALERT]" + ANSI_RESET);
 				try {			
 					ServerMessage abortionMessage = (ServerMessage) messageReceived;
 					if(abortionMessage.getServerMessageType() == ServerMessageType.SERVERMESSAGE_PLAYER_CHEAT ||
@@ -226,7 +226,7 @@ public class YoolooClient {
 						      startClient();
 						}else
 						{
-						    System.out.println(ANSI_RED + "[ALERT] => Du bist beim Cheaten erwischt worden. Deswegen wirst du aus der Sitzung ausgeschlossen! [ALERT]" + ANSI_RESET);
+							System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState + "] : " + ANSI_RED + "[ALERT] => Du bist beim Cheaten erwischt worden. Deswegen wirst du aus der Sitzung ausgeschlossen! [ALERT]" + ANSI_RESET);
 							System.exit(0);
 						}
 					}

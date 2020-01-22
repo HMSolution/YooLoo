@@ -45,6 +45,8 @@ public class YoolooClientHandler extends Thread {
 	public static final String ANSI_RED = "\u001B[31m";
 	public static final String ANSI_GREEN = "\u001B[32m";
 
+	public boolean cheated = false;
+
 	public YoolooClientHandler(YoolooServer yoolooServer, Socket clientSocket) {
 		this.myServer = yoolooServer;
 		myServer.toString();
@@ -114,10 +116,15 @@ public class YoolooClientHandler extends Thread {
 							System.out.println("[ClientHandler" + clientHandlerId + "] Karte empfangen:" + neueKarte);
 							if(meinSpieler.GetGespielteKarten().contains(neueKarte.getWert()))
 							{
-								System.out.println(ANSI_RED + "[ALERT] !!!!!Spielercheat erkannt!!!!! [ALERT]" + ANSI_RESET);
+								//Einleiten des Beendens eines cheats
+								System.out.println(ANSI_RED + "[ClientHandler" + clientHandlerId + "] [ALERT] !!!!!Spielercheat erkannt!!!!! [ALERT]" + ANSI_RESET);
+								sendeKommando(ServerMessageType.SERVERMESSAGE_PLAYER_CHEAT, ClientState.CLIENTSTATE_DISCONNECT, null);
+								cheated = true;
+								this.state = ServerState.ServerState_DISCONNECTED;
+								break;
 							}else {
-								System.out.println(ANSI_GREEN + "[VALID] => Played card has been verified [VALID]" + ANSI_RESET);
-								meinSpieler.gespielteKarteHinzufügen(neueKarte);
+								System.out.println(ANSI_GREEN + "[ClientHandler" + clientHandlerId + "] [VALID] => Played card has been verified [VALID]" + ANSI_RESET);
+								meinSpieler.gespielteKarteHinzufügen(neueKarte);								
 							}			
 							YoolooStich currentstich = spieleKarte(stichNummer, neueKarte);
 							// Punkte fuer gespielten Stich ermitteln
@@ -138,11 +145,22 @@ public class YoolooClientHandler extends Thread {
 					}
 				case ServerState_DISCONNECT:
 				// todo cic
-				
-            sendeKommando(ServerMessageType.SERVERMESSAGE_CHANGE_STATE, ClientState.CLIENTSTATE_DISCONNECTED,  null);
-//					sendeKommando(ServerMessageType.SERVERMESSAGE_RESULT_SET, ClientState.CLIENTSTATE_DISCONNECTED,	null);
-					oos.writeObject(session.getErgebnis());
-					this.state = ServerState.ServerState_DISCONNECTED;
+				try{
+					//Beenden wegen eines cheats
+					if(cheated)
+					{
+						state = ServerState.ServerState_DISCONNECTED;
+						break;
+					}else{
+						sendeKommando(ServerMessageType.SERVERMESSAGE_CHANGE_STATE, ClientState.CLIENTSTATE_DISCONNECTED, null);
+						//sendeKommando(ServerMessageType.SERVERMESSAGE_RESULT_SET, ClientState.CLIENTSTATE_DISCONNECTED,	null);
+						oos.writeObject(session.getErgebnis());
+						this.state = ServerState.ServerState_DISCONNECTED;
+					}
+				}catch(Exception e)
+				{
+					System.out.println("Verbindung zum Client abgebrochen");
+				}
 					break;
 				default:
 					System.out.println("Undefinierter Serverstatus - tue mal nichts!");
@@ -157,7 +175,6 @@ public class YoolooClientHandler extends Thread {
 		} finally {
 			System.out.println("[ClientHandler" + clientHandlerId + "] Verbindung zu " + socketAddress + " beendet");
 		}
-
 	}
 
 	private void sendeKommando(ServerMessageType serverMessageType, ClientState clientState,
@@ -247,6 +264,12 @@ public class YoolooClientHandler extends Thread {
 						+ session.getSpielplan()[i][j]);
 			}
 		}
+	}
+
+
+	public Socket getSocket()
+	{
+		return clientSocket;
 	}
 
 	/**

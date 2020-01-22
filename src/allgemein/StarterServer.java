@@ -13,9 +13,13 @@ public class StarterServer {
 		int listeningPort = 44137;
 		int spieleranzahl = 2; // min 1, max Anzahl definierte Farben in Enum YoolooKartenSpiel.KartenFarbe)
 		YoolooServer server = new YoolooServer(listeningPort, spieleranzahl, GameMode.GAMEMODE_SINGLE_GAME);
-		boolean restart = true;
+		boolean restart = false;
+		server.startServer();
+		restart = server.restart;
 		while(restart)
 		{
+			System.out.println("Server wird neu gestartet");
+
 			server = new YoolooServer(listeningPort, spieleranzahl, GameMode.GAMEMODE_SINGLE_GAME);
 			server.startServer();
 			restart = server.restart;
