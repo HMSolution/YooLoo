@@ -20,10 +20,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collector;
 
+import javax.swing.plaf.basic.BasicScrollPaneUI.HSBChangeListener;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+
+import com.google.gson.Gson;
 
 import common.LoginMessage;
 import common.YoolooKarte;
@@ -49,6 +53,9 @@ public class YoolooClient {
 	private YoolooSpieler meinSpieler;
 	private YoolooStich[] spielVerlauf = null;
 	private List<Spielzug> spielHistorie = new ArrayList<>();
+	private String historiePfad = "Spielhistorie.json";
+	private JsonService jsonService = new JsonService(historiePfad);
+	private Gson gson = new Gson();
 	
 	public YoolooClient() {
 		super();
@@ -182,53 +189,18 @@ public class YoolooClient {
 	}
 
 	private void SpielzugAbspeichern(Spielzug spielzug) {
-		JSONArray historie = LiesSpielhistorie();
-		JSONObject spielzugJson= new JSONObject();
-		spielzugJson.put("karte", spielzug.getGesetzteKarte());
-		spielzugJson.put("stich", spielzug.getPunkte());
-		spielzugJson.put("gewonnen", spielzug.getGewonnen());
-		historie.add(spielzugJson);
-		
-        try (FileWriter file = new FileWriter("Spielhistorie.json")) {
-            file.write(historie.toJSONString());
+		List<Spielzug> historie = jsonService.LiesDatei();
+		historie.add(spielzug);
+		String json = gson.toJson(historie);
+        try (FileWriter file = new FileWriter(historiePfad, false)) {
+        	file.write(json);
             file.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
 	}
 
-	private JSONArray LiesSpielhistorie() {
-		File file = new File("Spielhistorie.json");
-		if(!file.exists())
-		{
-			try {
-				file.createNewFile();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		
-		JSONParser parser = new JSONParser();
-		JSONArray historie = new JSONArray();
-		try (FileReader reader = new FileReader(file)){
-			Object json = parser.parse(reader);
-			historie = (JSONArray)json;
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
-		return historie;
-	}
 
 	private void spieleKarteAus(int i) throws IOException {
 		oos.writeObject(meinSpieler.getAktuelleSortierung()[i]);

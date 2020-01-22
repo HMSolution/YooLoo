@@ -5,8 +5,14 @@
 package common;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import org.json.simple.JSONArray;
+
+import client.JsonService;
+import client.Spielzug;
 import common.YoolooKartenspiel.Kartenfarbe;
 
 public class YoolooSpieler implements Serializable {
@@ -16,6 +22,7 @@ public class YoolooSpieler implements Serializable {
 	private Kartenfarbe spielfarbe;
 	private int clientHandlerId = -1;
 	private int punkte;
+	private JsonService jsonService = new JsonService("Spielhistorie.json");
 	private YoolooKarte[] aktuelleSortierung;
 
 	public YoolooSpieler(String name, int maxKartenWert) {
@@ -30,6 +37,15 @@ public class YoolooSpieler implements Serializable {
 	// 1. Erfolg einer Karte in einem Stich
 	// 2. Kartenwertigkeit / Stich Punkte Verhältnis 
 	public void sortierungFestlegen() {
+		List<Spielzug> spielzuege = jsonService.LiesDatei();
+		if(spielzuege == null || spielzuege.size() < 1)
+			return;
+		YoolooKarte[] neueSortierung = aktuelleSortierung;
+		
+		for(YoolooKarte karte : neueSortierung)
+		{
+			
+		}
 		
 	}
 
