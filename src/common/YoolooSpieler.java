@@ -8,6 +8,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.json.simple.JSONArray;
 
@@ -44,7 +46,8 @@ public class YoolooSpieler implements Serializable {
 		
 		for(YoolooKarte karte : neueSortierung)
 		{
-			
+			List<Spielzug> relevanteSpielzuege = spielzuege.stream().filter(x -> x.getGesetzteKarte() == karte.getWert()).collect(Collectors.toList());
+			//List<StichErfolg> ausgewerteteStiche = WerteSticheAus(relevanteSpielzuege);
 		}
 		
 	}
