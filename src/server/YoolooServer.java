@@ -16,7 +16,8 @@ import common.YoolooKartenspiel;
 public class YoolooServer {
 
 	// Server Standardwerte koennen ueber zweite Konstruktor modifiziert werden!
-	private int port = 44137;
+	private int spielerPort = 44137;
+	private int zuschauerPort = 44138;
 	private int spielerProRunde = 8; // min 1, max Anzahl definierte Farben in Enum YoolooKartenSpiel.KartenFarbe)
 	private GameMode serverGameMode = GameMode.GAMEMODE_SINGLE_GAME;
 
@@ -28,13 +29,16 @@ public class YoolooServer {
 		this.serverGameMode = serverGameMode;
 	}
 
-	private ServerSocket serverSocket = null;
+	private ServerSocket spielerSocket = null;
+	private ServerSocket zuschauerSocket = null;
 	private boolean serverAktiv = true;
 
 	// private ArrayList<Thread> spielerThreads;
 	private ArrayList<YoolooClientHandler> clientHandlerList;
-
+	private ArrayList<YoolooSpectatorHandler> spectatorHandlerList;
+	
 	private ExecutorService spielerPool;
+	private ExecutorService spectatorPool;
 
 	/**
 	 * Serverseitig durch ClientHandler angebotenen SpielModi. Bedeutung der
@@ -51,16 +55,19 @@ public class YoolooServer {
 		GAMEMODE_PLAY_POKAL_LL // noch nicht genutzt: Spielmodus: KO System mit Lucky Looser
 	};
 
-	public YoolooServer(int port, int spielerProRunde, GameMode gameMode) {
-		this.port = port;
+	public YoolooServer(int spielerPort, int zuschauerPort, int spielerProRunde, GameMode gameMode) {
+		this.spielerPort = spielerPort;
+		this.zuschauerPort = zuschauerPort;
 		this.spielerProRunde = spielerProRunde;
 		this.serverGameMode = gameMode;
 	}
-
+	
+	
 	public void startServer() {
 		try {
 			// Init
-			serverSocket = new ServerSocket(port);
+			spielerSocket = new ServerSocket(spielerPort);
+			zuschauerSocket = new ServerSocket(zuschauerPort);
 			spielerPool = Executors.newCachedThreadPool();
 			clientHandlerList = new ArrayList<YoolooClientHandler>();
 			System.out.println("Server gestartet - warte auf Spieler");
@@ -70,9 +77,19 @@ public class YoolooServer {
 
 				// Neue Spieler registrieren
 				try {
-					client = serverSocket.accept();
+					client = spielerSocket.accept();
 					YoolooClientHandler clientHandler = new YoolooClientHandler(this, client);
 					clientHandlerList.add(clientHandler);
+					System.out.println("[YoolooServer] Anzahl verbundene Spieler: " + clientHandlerList.size());
+				} catch (IOException e) {
+					System.out.println("Client Verbindung gescheitert");
+					e.printStackTrace();
+				}
+				
+				try {
+					client = zuschauerSocket.accept();
+					//Zuschauerhandler
+					//Liste der Zuschauer merken
 					System.out.println("[YoolooServer] Anzahl verbundene Spieler: " + clientHandlerList.size());
 				} catch (IOException e) {
 					System.out.println("Client Verbindung gescheitert");
