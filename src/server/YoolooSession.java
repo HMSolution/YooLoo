@@ -96,5 +96,9 @@ public class YoolooSession {
 		String ergebnis = "Ergebnis:\n blabla";
 		return ergebnis;
 	}
+	
+	public YoolooStich[] getStiche() {
+		return this.ausgewerteteStiche;
+	}
 
 }

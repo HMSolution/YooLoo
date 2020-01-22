@@ -7,11 +7,18 @@ package server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.util.LinkedHashMap;
 import java.util.ArrayList;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import common.YoolooKartenspiel;
+import messages.ServerMessage;
+import client.YoolooClient;
+import common.YoolooKarte;
+import utils.socketutils;
 
 public class YoolooServer {
 
@@ -32,17 +39,16 @@ public class YoolooServer {
 	private ServerSocket spielerSocket = null;
 	private ServerSocket zuschauerSocket = null;
 	private boolean serverAktiv = true;
+	private LinkedHashMap<String, ArrayList<Integer>> cardMap = new LinkedHashMap<>();
 
-	// private ArrayList<Thread> spielerThreads;
-	private ArrayList<YoolooClientHandler> clientHandlerList;
+	private LinkedHashMap<String, YoolooClientHandler> clientHandlerList;
 	private ArrayList<YoolooSpectatorHandler> spectatorHandlerList;
-	
-	private ExecutorService spielerPool;
-	private ExecutorService spectatorPool;
+
+	private ExecutorService threadPool;
 
 	/**
 	 * Serverseitig durch ClientHandler angebotenen SpielModi. Bedeutung der
-	 * einzelnen Codes siehe Inlinekommentare.
+	 * einzelnen Codes siehe Inlinekommentare.1
 	 * 
 	 * Derzeit nur Modus Play Single Game genutzt
 	 */
@@ -61,15 +67,38 @@ public class YoolooServer {
 		this.spielerProRunde = spielerProRunde;
 		this.serverGameMode = gameMode;
 	}
-	
-	
+
+	public void startSpectatorServer() {
+		try {
+			zuschauerSocket = new ServerSocket(this.zuschauerPort);
+
+			spectatorHandlerList = new ArrayList<YoolooSpectatorHandler>();
+			System.out.println("[+] Zuschauersocket gestartet, warte auf Verbindungen");
+			while (serverAktiv) {
+				Socket client = null;
+				// Fange Verbindungsprobleme ab
+				try {
+					client = zuschauerSocket.accept();
+					YoolooSpectatorHandler spectatorHandler = new YoolooSpectatorHandler(this, client);
+					spectatorHandlerList.add(spectatorHandler);
+					System.out.println("[~] Neuen Client zur Zuschauerliste hinzugefügt");
+				} catch (Exception ex) {
+					System.out.println("[-] Verbindung zum Zuschauerclient ist fehlgeschlagen");
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("Oh no... das ist was schiefgelaufen");
+			e.printStackTrace();
+		}
+	}
+
 	public void startServer() {
 		try {
 			// Init
 			spielerSocket = new ServerSocket(spielerPort);
-			zuschauerSocket = new ServerSocket(zuschauerPort);
-			spielerPool = Executors.newCachedThreadPool();
-			clientHandlerList = new ArrayList<YoolooClientHandler>();
+			threadPool = Executors.newCachedThreadPool();
+
+			clientHandlerList = new LinkedHashMap<String, YoolooClientHandler>();
 			System.out.println("Server gestartet - warte auf Spieler");
 
 			while (serverAktiv) {
@@ -78,19 +107,23 @@ public class YoolooServer {
 				// Neue Spieler registrieren
 				try {
 					client = spielerSocket.accept();
-					YoolooClientHandler clientHandler = new YoolooClientHandler(this, client);
-					clientHandlerList.add(clientHandler);
-					System.out.println("[YoolooServer] Anzahl verbundene Spieler: " + clientHandlerList.size());
-				} catch (IOException e) {
-					System.out.println("Client Verbindung gescheitert");
-					e.printStackTrace();
-				}
-				
-				try {
-					client = zuschauerSocket.accept();
-					//Zuschauerhandler
-					//Liste der Zuschauer merken
-					System.out.println("[YoolooServer] Anzahl verbundene Spieler: " + clientHandlerList.size());
+					String IP = ((InetSocketAddress) client.getRemoteSocketAddress()).getAddress().toString()
+							+ System.currentTimeMillis();
+
+					if (!this.clientHandlerList.containsKey(IP)) {
+						YoolooClientHandler clientHandler = new YoolooClientHandler(this, client);
+						clientHandlerList.put(IP, clientHandler);
+						System.out.println("[YoolooServer] Anzahl verbundene Spieler: " + clientHandlerList.size());
+					} else {
+						System.out.println("[YoolooServer] " + IP + " ist bereits angemeldet, lehne Verbindung ab.");
+						ServerMessage loginErr = new ServerMessage(
+								ServerMessage.ServerMessageType.SERVERMESSAGE_ALREADY_LOGGED_IN,
+								YoolooClient.ClientState.CLIENTSTATE_DISCONNECTED,
+								ServerMessage.ServerMessageResult.SERVER_MESSAGE_RESULT_NOT_OK);
+						socketutils.sendSerialized(client, loginErr);
+						client.close();
+					}
+
 				} catch (IOException e) {
 					System.out.println("Client Verbindung gescheitert");
 					e.printStackTrace();
@@ -102,16 +135,32 @@ public class YoolooServer {
 					// Init Session
 					YoolooSession yoolooSession = new YoolooSession(clientHandlerList.size(), serverGameMode);
 
-					// Starte pro Client einen ClientHandlerTread
-					for (int i = 0; i < clientHandlerList.size(); i++) {
-						YoolooClientHandler ch = clientHandlerList.get(i);
+					// Füge Zuschauer in aktive Session hinzu
+					for (YoolooSpectatorHandler spectator : this.spectatorHandlerList) {
+						spectator.joinSession(yoolooSession);
+						threadPool.execute(spectator);
+					}
+
+					// Starte pro Client einen ClientHandlerThread
+					int i = 0;
+					for (Entry<String, YoolooClientHandler> ent : this.clientHandlerList.entrySet()) {
+						YoolooClientHandler ch = ent.getValue();
 						ch.setHandlerID(i);
 						ch.joinSession(yoolooSession);
-						spielerPool.execute(ch); // Start der ClientHandlerThread - Aufruf der Methode run()
+						threadPool.execute(ch); // Start der ClientHandlerThread - Aufruf der Methode run()
+						i++;
+					}
+
+					try {
+						Thread.sleep(3000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
 
 					// nuechste Runde eroeffnen
-					clientHandlerList = new ArrayList<YoolooClientHandler>();
+	
+					clientHandlerList = new LinkedHashMap<String, YoolooClientHandler>();
+					spectatorHandlerList.clear();
 				}
 			}
 		} catch (IOException e1) {
@@ -127,9 +176,21 @@ public class YoolooServer {
 		if (code == 543210) {
 			this.serverAktiv = false;
 			System.out.println("Server wird beendet");
-			spielerPool.shutdown();
+			threadPool.shutdown();
 		} else {
 			System.out.println("Servercode falsch");
+		}
+	}
+	public void saveCardOrder(ArrayList<Integer> order, String clientName) {
+		System.out.println("[~] Speichere Kartenabfolge für " + clientName);
+		cardMap.put(clientName, order);
+	}
+	public ArrayList<Integer> getCardOrder(String clientName) {
+		if(this.cardMap.containsKey(clientName)){
+			System.out.println("[>] " + clientName + " ist bekannt, sende letzte Kartenreihenfolge.");
+			return this.cardMap.get(clientName);
+		}else{
+			return new ArrayList<Integer>();
 		}
 	}
 }
