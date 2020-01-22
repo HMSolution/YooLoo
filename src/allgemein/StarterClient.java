@@ -5,6 +5,7 @@
 package allgemein;
 
 import client.YoolooClient;
+import client.YoolooClient.ClientMode;
 
 public class StarterClient {
 	public static void main(String[] args) {
@@ -13,8 +14,7 @@ public class StarterClient {
 		String hostname = "localhost";
 //		String hostname = "10.101.251.247";
 		int port = 44137;
-		YoolooClient client = new YoolooClient(hostname, port);
+		YoolooClient client = new YoolooClient(ClientMode.CLIENTMODE_SPECTATOR, hostname, port);
 		client.startClient();
-
 	}
 }

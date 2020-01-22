@@ -6,6 +6,7 @@ package common;
 
 import java.io.Serializable;
 
+import client.YoolooClient.ClientMode;
 import server.YoolooServer.GameMode;
 
 public class LoginMessage implements Serializable {
@@ -14,11 +15,13 @@ public class LoginMessage implements Serializable {
 
 	private String spielerName;
 	private GameMode gameMode;
+	private ClientMode clientMode;
 
-	public LoginMessage(String name, GameMode play_mode) {
+	public LoginMessage(String name, GameMode play_mode, ClientMode clientMode) {
 		super();
 		this.spielerName = name;
 		this.gameMode = play_mode;
+		this.clientMode = clientMode;
 	}
 
 	public LoginMessage() {

@@ -18,6 +18,7 @@ import common.YoolooStich;
 import messages.ClientMessage;
 import messages.ClientMessage.ClientMessageType;
 import messages.ServerMessage;
+import server.YoolooServer.GameMode;
 
 public class YoolooClient {
 
@@ -28,6 +29,7 @@ public class YoolooClient {
 	private ObjectOutputStream oos = null;
 
 	private ClientState clientState = ClientState.CLIENTSTATE_NULL;
+	private ClientMode clientMode;
 
 	private String spielerName = "Name" + (System.currentTimeMillis() + "").substring(6);
 	private LoginMessage newLogin = null;
@@ -38,9 +40,10 @@ public class YoolooClient {
 		super();
 	}
 
-	public YoolooClient(String serverHostname, int serverPort) {
+	public YoolooClient(ClientMode clientMode, String serverHostname, int serverPort) {
 		super();
 		this.serverPort = serverPort;
+		this.clientMode = clientMode;
 		clientState = ClientState.CLIENTSTATE_NULL;
 	}
 
@@ -72,7 +75,7 @@ public class YoolooClient {
 						// TODO Klasse LoginMessage erweiteren um Interaktives ermitteln des
 						// Spielernames, GameModes, ...)
 						newLogin = eingabeSpielerDatenFuerLogin(); //Dummy aufruf
-						newLogin = new LoginMessage(spielerName);
+						newLogin = new LoginMessage(spielerName, GameMode.GAMEMODE_SINGLE_GAME, clientMode);
 					}
 					// Client meldet den Spieler an den Server
 					oos.writeObject(newLogin);
@@ -231,6 +234,11 @@ public class YoolooClient {
 		CLIENTSTATE_PLAY_SINGLE_GAME, // Spielmodus einfaches Spiel
 		CLIENTSTATE_DISCONNECT, // Verbindung soll getrennt werden
 		CLIENTSTATE_DISCONNECTED // Vebindung wurde getrennt
+	};
+	
+	public enum ClientMode {
+		CLIENTMODE_PLAYER, 
+		CLIENTMODE_SPECTATOR
 	};
 
 }
