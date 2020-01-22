@@ -95,18 +95,26 @@ public class YoolooClient {
 				case SERVERMESSAGE_SENDLOGIN:
 					// Server fordert Useridentifikation an
 					// Falls User local noch nicht bekannt wird er bestimmt
+					/*
 					if (newLogin == null || clientState == ClientState.CLIENTSTATE_LOGIN) {
 						// Spielerdaten vom Server ermitteln
 
 						newLogin = eingabeSpielerDatenFuerLogin(); //Dummy aufruf
 						newLogin = new LoginMessage(spielerName);
-					}
+					}*/
 					// Client meldet den Spieler an den Server
+					newLogin = new LoginMessage(spielerName);
+					System.out.println("Sende LoginMessage an Server");
+					oos.writeObject(newLogin);
+					empfangeSpieler();
+
+					/*
 					oos.writeObject(newLogin);
 					System.out.println("[id-x]ClientStatus: " + clientState + "] : LoginMessage fuer  " + spielerName
 							+ " an server gesendet warte auf Spielerdaten");
 					empfangeSpieler();
 					// ausgabeKartenSet();
+					*/
 					break;
 				case SERVERMESSAGE_SORT_CARD_SET:
 					// sortieren Karten
@@ -169,9 +177,9 @@ public class YoolooClient {
 	}
 
 	private void spieleStich(int stichNummer) throws IOException {
-		System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState
-				+ "] : Spiele Karte " + stichNummer);
+		System.out.println("-> Spiele Karte " + stichNummer);
 		spieleKarteAus(stichNummer);
+		System.out.println("-> Karte ausgespielt, empfange Stich");
 		YoolooStich iStich = empfangeStich();
 		spielVerlauf[stichNummer] = iStich;
 		System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState

@@ -37,7 +37,7 @@ public class YoolooServer {
 
 	private ServerSocket serverSocket = null;
 	private boolean serverAktiv = true;
-	private LinkedHashMap<String, ArrayList<Integer>> cardMap;
+	private LinkedHashMap<String, ArrayList<Integer>> cardMap = new LinkedHashMap<>();
 
 	// private LinkedHashMap<Thread> spielerThreads;
 	private LinkedHashMap<String, YoolooClientHandler> clientHandlerList;
