@@ -11,14 +11,17 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import allgemein.StarterServer;
 import client.YoolooClient.ClientState;
 import common.YoolooKartenspiel;
 import messages.ServerMessage;
 import messages.ServerMessage.ServerMessageResult;
 import messages.ServerMessage.ServerMessageType;
-import utils.socketutils;
+import utils.SocketUtils;
 
 public class YoolooServer {
+
+	public boolean restart = false;
 
 	// Server Standardwerte koennen ueber zweite Konstruktor modifiziert werden!
 	private int port = 44137;
@@ -34,8 +37,8 @@ public class YoolooServer {
 	}
 
 	private ServerSocket serverSocket = null;
-	private boolean serverAktiv = true;
-	socketutils utils = new socketutils();
+	public boolean serverAktiv = true;
+	SocketUtils socketUtils = new SocketUtils();
 
 	// private ArrayList<Thread> spielerThreads;
 	private ArrayList<YoolooClientHandler> clientHandlerList;
@@ -109,7 +112,7 @@ public class YoolooServer {
 			serverAktiv = false;
 			e1.printStackTrace();
 		}
-
+		restartSession(543210);
 	}
 	
 	public void sendCheatMessageToAllClients(YoolooClientHandler handlerToExpell)
@@ -120,8 +123,34 @@ public class YoolooServer {
 				ServerMessageResult.SERVER_MESSAGE_RESULT_OK);
 	   for(int i = 0; i < clientHandlerList.size(); i++)
 	   {
-		   utils.sendSerialized(clientHandlerList.get(i).getSocket(), notificationForPlayerCheating);
+		   socketUtils.sendSerialized(clientHandlerList.get(i).getSocket(), notificationForPlayerCheating);
 	   }
+	}
+	
+	public synchronized void restartSession(int code)
+	{
+		if(code == 543210)
+		{
+		try {
+			Thread.sleep(1500);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		for(YoolooClientHandler handler : clientHandlerList)
+		{
+			handler.Terminate();
+		}
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+			System.out.println("SERVERSOCKER KONNTE NICHT GESCHLOSSEN WERDEN");
+		}
+		this.restart = true;
+		this.serverAktiv = false;
+
+		} else {
+			System.out.println("Servercode falsch");
+		}
 	}
 
 	// TODO Dummy zur Serverterminierung noch nicht funktional

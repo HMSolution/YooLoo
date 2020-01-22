@@ -18,10 +18,11 @@ import common.YoolooStich;
 import messages.ClientMessage;
 import messages.ClientMessage.ClientMessageType;
 import messages.ServerMessage;
+import messages.ServerMessage.ServerMessageType;
 
 public class YoolooClient {
 
-	private String serverHostname = "10.101.136.24";
+	private String serverHostname = "localhost";
 	private int serverPort = 44137;
 	private Socket serverSocket = null;
 	private ObjectInputStream ois = null;
@@ -96,7 +97,13 @@ public class YoolooClient {
 					oos.writeObject(message);
 					break;
 				case SERVERMESSAGE_SEND_CARD:
-					spieleStich(kommandoMessage.getParamInt());
+					try {
+						spieleStich(kommandoMessage.getParamInt());	
+					}
+					catch(ClassCastException e)
+					{
+						break;
+					}					
 					break;
 				case SERVERMESSAGE_RESULT_SET:
 					System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState
@@ -151,7 +158,13 @@ public class YoolooClient {
 		System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState
 				+ "] : Spiele Karte " + stichNummer);
 		spieleKarteAus(stichNummer);
-		YoolooStich iStich = empfangeStich();
+		YoolooStich iStich = new YoolooStich();
+		try {
+			iStich = empfangeStich();
+		}
+		catch(Exception e) {
+		      System.out.println(e.getStackTrace());
+		}
 		spielVerlauf[stichNummer] = iStich;
 		System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState
 				+ "] : Empfange Stich " + iStich);
@@ -164,7 +177,7 @@ public class YoolooClient {
 	}
 
 	private void spieleKarteAus(int i) throws IOException {
-		oos.writeObject(meinSpieler.getAktuelleSortierung()[10]);
+		oos.writeObject(meinSpieler.getAktuelleSortierung()[i]);
 	}
 
 	// Methoden fuer Datenempfang vom Server / ClientHandler
@@ -193,12 +206,38 @@ public class YoolooClient {
 		}
 	}
 
-	private YoolooStich empfangeStich() {
-		try {
-			return (YoolooStich) ois.readObject();
-		} catch (ClassNotFoundException | IOException e) {
-			e.printStackTrace();
-		}
+	private YoolooStich empfangeStich() throws ClassNotFoundException, IOException {
+		Object messageReceived = ois.readObject();
+		try {			
+			return (YoolooStich) messageReceived; 
+		} catch (Exception e) {
+			if(e instanceof ClassCastException)
+			{
+				System.out.println(ANSI_RED + "[ALERT] => Spiel von Server abgebrochen. [ALERT]" + ANSI_RESET);
+				try {			
+					ServerMessage abortionMessage = (ServerMessage) messageReceived;
+					if(abortionMessage.getServerMessageType() == ServerMessageType.SERVERMESSAGE_PLAYER_CHEAT ||
+					   abortionMessage.getServerMessageType() == ServerMessageType.SERVERMESSAGE_NOTIFY_CHEAT)
+					{
+						if(abortionMessage.getServerMessageType() == ServerMessageType.SERVERMESSAGE_NOTIFY_CHEAT)
+						{
+						      System.out.println(ANSI_RED + "[ALERT] => Leider hat jemand geschummelt, der Spieler wurde aus der Sitzung ausgeschlossen."
+						      		+ " Die Sitzung wird zurückgesetzt. [ALERT]" + ANSI_RESET);
+						      startClient();
+						}else
+						{
+						    System.out.println(ANSI_RED + "[ALERT] => Du bist beim Cheaten erwischt worden. Deswegen wirst du aus der Sitzung ausgeschlossen! [ALERT]" + ANSI_RESET);
+							System.exit(0);
+						}
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}else
+			{
+				e.printStackTrace();
+			}
+		}	
 		return null;
 	}
 
