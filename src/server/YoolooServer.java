@@ -4,7 +4,11 @@
 
 package server;
 
-import java.io.IOException;
+import java.io.IOException; 
+import java.util.logging.*;
+
+import Logger.LoggerWrapper;
+
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -19,11 +23,12 @@ public class YoolooServer {
 	private int port = 44137;
 	private int spielerProRunde = 8; // min 1, max Anzahl definierte Farben in Enum YoolooKartenSpiel.KartenFarbe)
 	private GameMode serverGameMode = GameMode.GAMEMODE_SINGLE_GAME;
-
+	private LoggerWrapper loggerWrapper = new LoggerWrapper();
+	
 	public GameMode getServerGameMode() {
 		return serverGameMode;
 	}
-
+	
 	public void setServerGameMode(GameMode serverGameMode) {
 		this.serverGameMode = serverGameMode;
 	}
@@ -50,7 +55,7 @@ public class YoolooServer {
 		GAMEMODE_PLAY_POKAL, // noch nicht genutzt: Spielmodus: KO System
 		GAMEMODE_PLAY_POKAL_LL // noch nicht genutzt: Spielmodus: KO System mit Lucky Looser
 	};
-
+	
 	public YoolooServer(int port, int spielerProRunde, GameMode gameMode) {
 		this.port = port;
 		this.spielerProRunde = spielerProRunde;
@@ -60,16 +65,23 @@ public class YoolooServer {
 	public void startServer() {
 		try {
 			// Init
+			loggerWrapper.logBasicString("[SERVER-LOG]: Server wird gestartet");
+
+
+
 			serverSocket = new ServerSocket(port);
 			spielerPool = Executors.newCachedThreadPool();
 			clientHandlerList = new ArrayList<YoolooClientHandler>();
 			System.out.println("Server gestartet - warte auf Spieler");
-
 			while (serverAktiv) {
+				loggerWrapper.logBasicString("[SERVER-LOG]: Server aktiv");
+
 				Socket client = null;
 
 				// Neue Spieler registrieren
 				try {
+					loggerWrapper.logBasicString("[SERVER-LOG]: Spieler wird registriert");
+
 					client = serverSocket.accept();
 					YoolooClientHandler clientHandler = new YoolooClientHandler(this, client);
 					clientHandlerList.add(clientHandler);
