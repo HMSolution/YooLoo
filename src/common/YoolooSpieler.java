@@ -25,18 +25,12 @@ public class YoolooSpieler implements Serializable {
 		this.aktuelleSortierung = new YoolooKarte[maxKartenWert];
 	}
 
-	// Sortierung wird zufuellig ermittelt
+	// Letzte genutzte Sortierung (Antwort des Servers auf den Login) wird als Basis genommen.
+	// Danach wird die Sortierung nach folgenden Kreterien abgeändert:
+	// 1. Erfolg einer Karte in einem Stich
+	// 2. Kartenwertigkeit / Stich Punkte Verhältnis 
 	public void sortierungFestlegen() {
-		YoolooKarte[] neueSortierung = new YoolooKarte[this.aktuelleSortierung.length];
-		for (int i = 0; i < neueSortierung.length; i++) {
-			int neuerIndex = (int) (Math.random() * neueSortierung.length);
-			while (neueSortierung[neuerIndex] != null) {
-				neuerIndex = (int) (Math.random() * neueSortierung.length);
-			}
-			neueSortierung[neuerIndex] = aktuelleSortierung[i];
-			// System.out.println(i+ ". neuerIndex: "+neuerIndex);
-		}
-		aktuelleSortierung = neueSortierung;
+		
 	}
 
 	public int erhaeltPunkte(int neuePunkte) {
