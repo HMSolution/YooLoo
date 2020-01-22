@@ -48,12 +48,12 @@ public class YoolooClient {
 
 	private ClientState clientState = ClientState.CLIENTSTATE_NULL;
 
-	private String spielerName = "Name" + (System.currentTimeMillis() + "").substring(6);
+	private String spielerName = "Modified-Client";
 	private LoginMessage newLogin = null;
 	private YoolooSpieler meinSpieler;
 	private YoolooStich[] spielVerlauf = null;
 	private List<Spielzug> spielHistorie = new ArrayList<>();
-	private String historiePfad = "Spielhistorie.json";
+	public final static String historiePfad = "Spielhistorie.json";
 	private JsonService jsonService = new JsonService(historiePfad);
 	private Gson gson = new Gson();
 	
@@ -184,12 +184,14 @@ public class YoolooClient {
 		
 		YoolooKarte meineKarte =  Arrays.stream(iStich.getStich()).filter(k -> k.getFarbe() == meinSpieler.getSpielfarbe()).findFirst().get();
 		Spielzug spielzug = new Spielzug(iStich.getStichNummer(), meineKarte.getWert(), stichGewonnen);
-		
 		SpielzugAbspeichern(spielzug);
 	}
 
 	private void SpielzugAbspeichern(Spielzug spielzug) {
 		List<Spielzug> historie = jsonService.LiesDatei();
+		if(historie == null)
+			return;
+		
 		historie.add(spielzug);
 		String json = gson.toJson(historie);
         try (FileWriter file = new FileWriter(historiePfad, false)) {

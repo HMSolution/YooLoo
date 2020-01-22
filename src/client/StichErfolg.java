@@ -3,11 +3,22 @@ package client;
 public class StichErfolg {
 
 	private int stichNummer;
-	private int wertungInProzent;
-	public int getWertungInProzent() {
+	private Integer wertungInProzent;
+	private int anzahlGespielterStiche;
+	public StichErfolg(int stichNummer, Integer wertung, int anzahlGespielterStiche) {
+		this.stichNummer = stichNummer;
+		this.wertungInProzent = wertung;
+		this.anzahlGespielterStiche = anzahlGespielterStiche;
+	}
+	
+	public Integer getWertungInProzent() {
 		return wertungInProzent;
 	}
-	public void setWertungInProzent(int wertungInProzent) {
+	
+	public int getAnzahlGespielterStiche() {
+		return anzahlGespielterStiche;
+	}
+	public void setWertungInProzent(Integer wertungInProzent) {
 		this.wertungInProzent = wertungInProzent;
 	}
 	public int getStichNummer() {

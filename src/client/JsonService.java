@@ -18,6 +18,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class JsonService implements Serializable {
 
@@ -54,11 +55,19 @@ public class JsonService implements Serializable {
         catch (IOException e) 
         {
             e.printStackTrace();
+            return null;
         }
         
         String json = contentBuilder.toString();
+        Spielzug[] spielzuege;
         
-        Spielzug[] spielzuege = gson.fromJson(json, Spielzug[].class);
+        try {
+            spielzuege = gson.fromJson(json, Spielzug[].class);
+        }catch(JsonSyntaxException e)
+        {
+        	e.printStackTrace();
+        	return null;
+        }
         ArrayList<Spielzug> spielzuegeList = new ArrayList<Spielzug>();
         
         if(spielzuege == null || spielzuege.length < 1)
