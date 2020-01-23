@@ -4,7 +4,11 @@
 
 package server;
 
-import java.io.IOException;
+import java.io.IOException; 
+import java.util.logging.*;
+
+import Logger.LoggerWrapper;
+
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetSocketAddress;
@@ -29,11 +33,12 @@ public class YoolooServer {
 	private int port = 44137;
 	private int spielerProRunde = 8; // min 1, max Anzahl definierte Farben in Enum YoolooKartenSpiel.KartenFarbe)
 	private GameMode serverGameMode = GameMode.GAMEMODE_SINGLE_GAME;
-
+	private LoggerWrapper loggerWrapper = new LoggerWrapper("Server");
+	
 	public GameMode getServerGameMode() {
 		return serverGameMode;
 	}
-
+	
 	public void setServerGameMode(GameMode serverGameMode) {
 		this.serverGameMode = serverGameMode;
 	}
@@ -62,7 +67,7 @@ public class YoolooServer {
 		GAMEMODE_PLAY_POKAL, // noch nicht genutzt: Spielmodus: KO System
 		GAMEMODE_PLAY_POKAL_LL // noch nicht genutzt: Spielmodus: KO System mit Lucky Looser
 	};
-
+	
 	public YoolooServer(int port, int spielerProRunde, GameMode gameMode) {
 		this.port = port;
 		this.spielerProRunde = spielerProRunde;
@@ -72,16 +77,23 @@ public class YoolooServer {
 	public void startServer() {
 		try {
 			// Init
+			loggerWrapper.logInfoString("[SERVER-LOG]: Server wird gestartet");
+
 			serverSocket = new ServerSocket(port);
 			spielerPool = Executors.newCachedThreadPool();
 			clientHandlerList = new LinkedHashMap<String, YoolooClientHandler>();
 			System.out.println("Server gestartet - warte auf Spieler");
-
+			loggerWrapper.logInfoString("[SERVER-LOG]: Server wartet auf Spieler");
+			
 			while (serverAktiv) {
+				loggerWrapper.logInfoString("[SERVER-LOG]: Server aktiv");
+
 				Socket client = null;
 
 				// Neue Spieler registrieren
 				try {
+					loggerWrapper.logInfoString("[SERVER-LOG]: Spieler wird registriert");
+
 					client = serverSocket.accept();
 					String IP = ((InetSocketAddress) client.getRemoteSocketAddress()).getAddress().toString();
 					
@@ -89,6 +101,7 @@ public class YoolooServer {
 						YoolooClientHandler clientHandler = new YoolooClientHandler(this, client);
 						clientHandlerList.put(IP, clientHandler);
 						System.out.println("[YoolooServer] Anzahl verbundene Spieler: " + clientHandlerList.size());
+						loggerWrapper.logInfoString("[SERVER-LOG]:Spieler hat sich verbunden ");
 					}else{
 						System.out.println("[YoolooServer] " + IP + " ist bereits angemeldet, lehne Verbindung ab.");
 						ServerMessage loginErr = new ServerMessage(
@@ -103,6 +116,7 @@ public class YoolooServer {
 
 				} catch (IOException e) {
 					System.out.println("Client Verbindung gescheitert");
+					loggerWrapper.logWarningString("[SERVER-LOG]: Client Verbindung gescheitert  ");
 					e.printStackTrace();
 				}
 
@@ -111,11 +125,13 @@ public class YoolooServer {
 				if (clientHandlerList.size() >= Math.min(spielerProRunde,
 						YoolooKartenspiel.Kartenfarbe.values().length)) {
 					// Init Session
+					loggerWrapper.logInfoString("[SERVER-LOG]: Neue Session wird startet");
 					YoolooSession yoolooSession = new YoolooSession(clientHandlerList.size(), serverGameMode);
 
 					// Starte pro Client einen ClientHandlerThread
 					int i = 0;
 					for (Entry<String, YoolooClientHandler> ent : this.clientHandlerList.entrySet()) {
+						loggerWrapper.logInfoString("[SERVER-LOG]: pro Client wird ein ClientHandlerThread startet");
 						YoolooClientHandler ch = ent.getValue();
 						ch.setHandlerID(i);
 						ch.joinSession(yoolooSession);
@@ -142,11 +158,13 @@ public class YoolooServer {
 
 					// nuechste Runde eroeffnen
 					clientHandlerList = new LinkedHashMap<String, YoolooClientHandler>();
+					loggerWrapper.logInfoString("[SERVER-LOG]: naechste Runde wird eroeffnet");
 				}
 			}
 			EndSession(543210);
 		} catch (IOException e1) {
 			System.out.println("ServerSocket nicht gebunden");
+			loggerWrapper.logWarningString("[SERVER-LOG]: ServerSocket wurde nicht gebunden");
 			serverAktiv = false;
 			e1.printStackTrace();
 		}
@@ -191,9 +209,11 @@ public class YoolooServer {
 		if (code == 543210) {
 			this.serverAktiv = false;
 			System.out.println("Server wird beendet");
+			loggerWrapper.logInfoString("[SERVER-LOG]: Server wird beendet");
 			spielerPool.shutdown();
 		} else {
 			System.out.println("Servercode falsch");
+			loggerWrapper.logWarningString("[SERVER-LOG]: Servercode ist falsch");
 		}
 	}
 	public void saveCardOrder(ArrayList<Integer> order, String clientName) {
