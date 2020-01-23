@@ -39,7 +39,7 @@ public class YoolooServer {
 	private boolean serverAktiv = true;
 	private LinkedHashMap<String, ArrayList<Integer>> cardMap = new LinkedHashMap<>();
 
-	// private LinkedHashMap<Thread> spielerThreads;
+	
 	private LinkedHashMap<String, YoolooClientHandler> clientHandlerList;
 
 	private ExecutorService spielerPool;
