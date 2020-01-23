@@ -40,7 +40,7 @@ public class YoolooServer {
 
 	private ServerSocket serverSocket = null;
 	public boolean serverAktiv = true;
-	SocketUtils socketUtils = new SocketUtils();
+	Socketutils socketUtils = new Socketutils();
 	private LinkedHashMap<String, ArrayList<Integer>> cardMap = new LinkedHashMap<>();
 
 	
