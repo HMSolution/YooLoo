@@ -1,2 +1,4 @@
+build_cmds
+.vscode
 bin/
 *.class
