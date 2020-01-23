@@ -1,5 +1,15 @@
+build_cmds
+.vscode
+bin/
+bin\
+*.class
 /Spielhistorie1.json
 /Spielhistorie.json
 build_cmds
 .vscode
 bin/
+bin/allgemein/StarterClient.class
+bin/common/YoolooKartenspiel.class
+bin/common/YoolooSpieler.class
+bin/server/YoolooClientHandler.class
+bin/server/YoolooClientHandler$ServerState.class

@@ -13,14 +13,17 @@ import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+import client.YoolooClient.ClientState;
 import common.YoolooKartenspiel;
 import messages.ServerMessage;
+import messages.ServerMessage.ServerMessageType;
+import utils.Socketutils;
 import client.YoolooClient;
-import common.YoolooKarte;
-import utils.socketutils;
+
 
 public class YoolooServer {
+
+	public boolean restart = false;
 
 	// Server Standardwerte koennen ueber zweite Konstruktor modifiziert werden!
 	private int port = 44137;
@@ -36,7 +39,8 @@ public class YoolooServer {
 	}
 
 	private ServerSocket serverSocket = null;
-	private boolean serverAktiv = true;
+	public boolean serverAktiv = true;
+	Socketutils socketUtils = new Socketutils();
 	private LinkedHashMap<String, ArrayList<Integer>> cardMap = new LinkedHashMap<>();
 
 	
@@ -92,7 +96,7 @@ public class YoolooServer {
 													YoolooClient.ClientState.CLIENTSTATE_DISCONNECTED,
 													ServerMessage.ServerMessageResult.SERVER_MESSAGE_RESULT_NOT_OK	
 												);
-						socketutils.sendSerialized(client, loginErr);
+						Socketutils.sendSerialized(client, loginErr);
 						client.close();
 					}
 
@@ -102,6 +106,7 @@ public class YoolooServer {
 					e.printStackTrace();
 				}
 
+				
 				// Neue Session starten wenn ausreichend Spieler verbunden sind!
 				if (clientHandlerList.size() >= Math.min(spielerProRunde,
 						YoolooKartenspiel.Kartenfarbe.values().length)) {
@@ -118,16 +123,64 @@ public class YoolooServer {
 						i++;
 					}
 
+					try {
+						//Pause, da sonst die clienthandler thread werte nicht durchkommen
+						Thread.sleep(1500);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					
+					for(Entry<String, YoolooClientHandler> ent : this.clientHandlerList.entrySet()) {
+						YoolooClientHandler handler = ent.getValue();
+						if(handler.cheated)
+						serverAktiv = false;
+						restart = true;
+						//prüfen ob in den Handlern gecheatet wurde
+						//entsprechend wird ein Restart eingeleitet
+						
+					}
+
 					// nuechste Runde eroeffnen
 					clientHandlerList = new LinkedHashMap<String, YoolooClientHandler>();
 				}
 			}
+			EndSession(543210);
 		} catch (IOException e1) {
 			System.out.println("ServerSocket nicht gebunden");
 			serverAktiv = false;
 			e1.printStackTrace();
 		}
+	}
+	
+	public synchronized void EndSession(int code)
+	{
+		if(code == 543210)
+		{
+		try {
+			Thread.sleep(1500);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		sendCheatMessageToAllClients();
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+			System.out.println("SERVERSOCKET KONNTE NICHT GESCHLOSSEN WERDEN");
+		}
+		} else {
+			System.out.println("Servercode falsch");
+		}
+	}
 
+	public void sendCheatMessageToAllClients()
+	{
+		ServerMessage notificationForPlayerCheating = new ServerMessage(ServerMessageType.SERVERMESSAGE_NOTIFY_CHEAT,
+				ClientState.CLIENTSTATE_DISCONNECT,
+				null);
+
+	   for(Entry<String, YoolooClientHandler> ent : this.clientHandlerList.entrySet()) {
+		Socketutils.sendSerialized(ent.getValue().getSocket(), notificationForPlayerCheating);
+	   }
 	}
 
 	// TODO Dummy zur Serverterminierung noch nicht funktional

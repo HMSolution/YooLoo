@@ -3,16 +3,13 @@
 //  V0.106  |200107| cic |    -   | add history of change
 
 package common;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
 import org.json.simple.JSONArray;
-
 import client.JsonService;
 import client.Spielzug;
 import client.StichErfolg;
@@ -27,6 +24,7 @@ public class YoolooSpieler implements Serializable {
 	private int clientHandlerId = -1;
 	private int punkte;
 	private YoolooKarte[] aktuelleSortierung;
+	private ArrayList<Integer> gespielteNummern = new ArrayList<Integer>();
 
 	public YoolooSpieler(String name, int maxKartenWert) {
 		this.name = name;
@@ -62,6 +60,17 @@ public class YoolooSpieler implements Serializable {
 			
 			SetzteKarte(karte, bestePosition, neueSortierung);
 		}
+		
+		aktuelleSortierung = neueSortierung;
+	}
+	
+	// Cheat Testzweck
+	public void sortierungAufZehnFestlegen() {
+		YoolooKarte[] neueSortierung = new YoolooKarte[this.aktuelleSortierung.length];
+		for (int i = 0; i < neueSortierung.length; i++) {
+			neueSortierung[i] = new YoolooKarte(Kartenfarbe.Blau,10);
+			}
+			// System.out.println(i+ ". neuerIndex: "+neuerIndex);
 		
 		aktuelleSortierung = neueSortierung;
 	}
@@ -242,7 +251,16 @@ public class YoolooSpieler implements Serializable {
 
 	public void stichAuswerten(YoolooStich stich) {
 		System.out.println(stich.toString());
-
+	}
+	
+	public void gespielteKarteHinzufuegen(YoolooKarte karte)
+	{
+		gespielteNummern.add(karte.getWert());
+	}
+	
+	public ArrayList<Integer> GetGespielteKarten()
+	{
+		return gespielteNummern;
 	}
 
 }

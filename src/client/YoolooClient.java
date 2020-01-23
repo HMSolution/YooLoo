@@ -20,16 +20,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collector;
-
 import javax.swing.plaf.basic.BasicScrollPaneUI.HSBChangeListener;
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-
 import com.google.gson.Gson;
-
 import common.LoginMessage;
 import common.YoolooKarte;
 import common.YoolooKartenspiel;
@@ -38,6 +34,7 @@ import common.YoolooStich;
 import messages.ClientMessage;
 import messages.ClientMessage.ClientMessageType;
 import messages.ServerMessage;
+import messages.ServerMessage.ServerMessageType;
 
 public class YoolooClient {
 
@@ -53,6 +50,13 @@ public class YoolooClient {
 	private LoginMessage newLogin = null;
 	private YoolooSpieler meinSpieler;
 	private YoolooStich[] spielVerlauf = null;
+	
+	public static final String ANSI_RESET = "\u001B[0m";
+	public static final String ANSI_RED = "\u001B[31m";
+	public static final String ANSI_GREEN = "\u001B[32m";
+
+	public boolean restart = false;
+
 	private List<Spielzug> spielHistorie = new ArrayList<>();
 	public final static String historiePfad = "Spielhistorie.json";
 	private JsonService jsonService = new JsonService(historiePfad);
@@ -115,55 +119,47 @@ public class YoolooClient {
 				}
 				// 3. Schritt Kommandospezifisch reagieren
 				switch (kommandoMessage.getServerMessageType()) {
-					case SERVERMESSAGE_SENDLOGIN:
-						// Server fordert Useridentifikation an
-						// Falls User local noch nicht bekannt wird er bestimmt
-						/*
-						if (newLogin == null || clientState == ClientState.CLIENTSTATE_LOGIN) {
-							// Spielerdaten vom Server ermitteln
+				case SERVERMESSAGE_SENDLOGIN:
 
-							newLogin = eingabeSpielerDatenFuerLogin(); //Dummy aufruf
-							newLogin = new LoginMessage(spielername);
-						}*/
-						// Client meldet den Spieler an den Server
 						newLogin = new LoginMessage(spielername);
 						
 						oos.writeObject(newLogin);
 						empfangeSpieler();
 
-						/*
-						oos.writeObject(newLogin);
-						System.out.println("[id-x]ClientStatus: " + clientState + "] : LoginMessage fuer  " + spielername
-								+ " an server gesendet warte auf Spielerdaten");
-						empfangeSpieler();
-						// ausgabeKartenSet();
-						*/
+					break;
+				case SERVERMESSAGE_SORT_CARD_SET:
+					// sortieren Karten
+					meinSpieler.sortierungFestlegen();
+					ausgabeKartenSet();
+					// ggfs. Spielverlauf löschen
+					spielVerlauf = new YoolooStich[YoolooKartenspiel.maxKartenWert];
+					ClientMessage message = new ClientMessage(ClientMessageType.ClientMessage_OK,
+							"Kartensortierung ist erfolgt!");
+					oos.writeObject(message);
+					break;
+				case SERVERMESSAGE_SEND_CARD:
+					try {
+						spieleStich(kommandoMessage.getParamInt());	
+					}
+					catch(ClassCastException e)
+					{
 						break;
-					case SERVERMESSAGE_SORT_CARD_SET:
-						// sortieren Karten
-						meinSpieler.sortierungFestlegen();
-						ausgabeKartenSet();
-						// ggfs. Spielverlauf lรถschen
-						spielVerlauf = new YoolooStich[YoolooKartenspiel.maxKartenWert];
-						ClientMessage message = new ClientMessage(ClientMessageType.ClientMessage_OK,
-								"Kartensortierung ist erfolgt!");
-						oos.writeObject(message);
-						break;
-					case SERVERMESSAGE_SEND_CARD:
-						spieleStich(kommandoMessage.getParamInt());
-						break;
-					case SERVERMESSAGE_RESULT_SET:
-						System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState
-								+ "] : Ergebnis ausgeben ");
-						String ergebnis = empfangeErgebnis();
-						System.out.println(ergebnis.toString());
-						break;
-								// basic version: wechsel zu ClientState Disconnected thread beenden
-					case SERVERMESSAGE_CHANGE_STATE:
-					break ;
-					
-					default:
-						break;
+					}					
+					break;
+				case SERVERMESSAGE_RESULT_SET:
+					System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState
+							+ "] : Ergebnis ausgeben ");
+					String ergebnis = empfangeErgebnis();
+					System.out.println(ergebnis.toString());
+					break;
+					           // basic version: wechsel zu ClientState Disconnected thread beenden
+				case SERVERMESSAGE_CHANGE_STATE:
+				break ;
+				case SERVERMESSAGE_PLAYER_CHEAT:
+					System.out.println(ANSI_RED + "[ALERT] => Du bist beim Cheaten erwischt worden. Deswegen wirst du aus der Sitzung ausgeschlossen! [ALERT]" + ANSI_RESET);
+					break;	
+				default:
+					break;
 				}
 			}
 		} catch (UnknownHostException e) {
@@ -202,8 +198,13 @@ public class YoolooClient {
 	private void spieleStich(int stichNummer) throws IOException {
 		System.out.println("-> Spiele Karte " + stichNummer);
 		spieleKarteAus(stichNummer);
-		System.out.println("-> Karte ausgespielt, empfange Stich");
-		YoolooStich iStich = empfangeStich();
+		YoolooStich iStich = new YoolooStich();
+		try {
+			iStich = empfangeStich();
+		}
+		catch(Exception e) {
+		      System.out.println(e.getStackTrace());
+		}
 		spielVerlauf[stichNummer] = iStich;
 		System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState
 				+ "] : Empfange Stich " + iStich);
@@ -268,12 +269,40 @@ public class YoolooClient {
 		}
 	}
 
-	private YoolooStich empfangeStich() {
-		try {
-			return (YoolooStich) ois.readObject();
-		} catch (ClassNotFoundException | IOException e) {
-			e.printStackTrace();
-		}
+	private YoolooStich empfangeStich() throws ClassNotFoundException, IOException {
+		Object messageReceived = ois.readObject();
+		try {			
+			return (YoolooStich) messageReceived; 
+		} catch (Exception e) {
+			if(e instanceof ClassCastException)
+			{
+				System.out.println(ANSI_RED + "[ALERT] => Das Spiel wurde vom Server abgebrochen. [ALERT]" + ANSI_RESET);
+				try {			
+					ServerMessage abortionMessage = (ServerMessage) messageReceived;
+					if(abortionMessage.getServerMessageType() == ServerMessageType.SERVERMESSAGE_PLAYER_CHEAT ||
+					   abortionMessage.getServerMessageType() == ServerMessageType.SERVERMESSAGE_NOTIFY_CHEAT)
+					{
+						if(abortionMessage.getServerMessageType() == ServerMessageType.SERVERMESSAGE_NOTIFY_CHEAT)
+						{
+						      System.out.println(ANSI_RED + "[ALERT] => Leider hat jemand geschummelt, der Spieler wurde aus der Sitzung ausgeschlossen."
+									  + " Die Sitzung wird zurückgesetzt. [ALERT]" + ANSI_RESET);
+							  restart = true;
+							  System.exit(0);
+						}else
+						{
+							System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState + "] : " + ANSI_RED + "[ALERT] => Du bist beim Cheaten erwischt worden. Deswegen wirst du aus der Sitzung ausgeschlossen! [ALERT]" + ANSI_RESET);
+							restart = false;
+							System.exit(0);
+						}
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}else
+			{
+				e.printStackTrace();
+			}
+		}	
 		return null;
 	}
 
