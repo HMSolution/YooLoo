@@ -66,26 +66,27 @@ public class YoolooClient {
 			if (this.clientMode == ClientMode.CLIENTMODE_SPECTATOR)
 				System.out.println("Starte Client im Zuschauermodus - funktioniert nicht mit älteren Servern!");
 			// Lese Namen aus stdin //
-			/*
-			 * boolean failedOnce = false;
-			 * System.out.println("Bitte gebe zunächst deinen Namen an:"); Scanner temporary
-			 * = new Scanner(System.in);
-			 * 
-			 * while(this.spielerName.length() < 4){ if(failedOnce)
-			 * System.out.println("Dein Name muss mindestens 4 Zeichen lang sein.");
-			 * System.out.print(">> "); this.spielerName = temporary.nextLine(); failedOnce
-			 * = true; }
-			 * 
-			 * System.out.println("Bitte gebe die Server IP/Hostname ein:");
-			 * System.out.print(">> "); this.serverHostname = temporary.nextLine();
-			 * 
-			 * 
-			 * System.out.println("Logge als " + this.spielerName + " ein");
-			 * 
-			 * temporary.close();
-			 */
-			this.spielerName = Long.toString(System.currentTimeMillis());
-			this.serverHostname = "localhost";
+			
+			boolean failedOnce = false;
+			System.out.println("Bitte gebe zunächst deinen Namen an:"); 
+			Scanner temporary = new Scanner(System.in);
+
+			while(this.spielerName.length() < 4){ 
+				if(failedOnce)
+					System.out.println("Dein Name muss mindestens 4 Zeichen lang sein.");
+				System.out.print(">> "); 
+				this.spielerName = temporary.nextLine(); 
+				failedOnce= true;
+			}
+
+			System.out.println("Bitte gebe die Server IP/Hostname ein:");
+			System.out.print(">> "); this.serverHostname = temporary.nextLine();
+
+			
+			System.out.println("Logge als " + this.spielerName + " ein");
+			
+			temporary.close();
+			
 			//////////////////////////
 
 			clientState = ClientState.CLIENTSTATE_CONNECT;
