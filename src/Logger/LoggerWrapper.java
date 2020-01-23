@@ -13,15 +13,14 @@ public class LoggerWrapper {
 	Handler file_handler;
 	Formatter klartext;
 	
-	public LoggerWrapper()
+	public LoggerWrapper(String name)
 	{
 		// Logger erzeugen
-		logger = Logger.getLogger("Server-Logger");
+		logger = Logger.getLogger("Server-Logger-"+name);
 		
 		//File Handler erzeugen
 		try {
-			file_handler = new FileHandler("ServerLog.txt", true);
-			logger.addHandler(file_handler);
+			file_handler = new FileHandler("ServerLog-"+name+".txt", true);
 		} catch (SecurityException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -31,11 +30,20 @@ public class LoggerWrapper {
 		//Formatter erzeugen
 		klartext = new SimpleFormatter();
 		file_handler.setFormatter(klartext);
+		logger.addHandler(file_handler);
 	}
 	
-	public static void logBasicString(String message)
+	public static void logInfoString(String message)
 	{
 		logger.log(Level.INFO, message);
+	}
+	public static void logWarningString(String message)
+	{
+		logger.log(Level.WARNING, message);
+	}
+	public static void logFinestString(String message)
+	{
+		logger.log(Level.FINEST, message);
 	}
 
 }
