@@ -179,7 +179,10 @@ public class YoolooServer {
 				null);
 
 	   for(Entry<String, YoolooClientHandler> ent : this.clientHandlerList.entrySet()) {
-		Socketutils.sendSerialized(ent.getValue().getSocket(), notificationForPlayerCheating);
+		   if(!ent.getValue().cheated)
+		   {
+				Socketutils.sendSerialized(ent.getValue().getSocket(), notificationForPlayerCheating);
+		   }
 	   }
 	}
 

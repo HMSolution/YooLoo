@@ -68,7 +68,7 @@ public class YoolooSpieler implements Serializable {
 	public void sortierungAufZehnFestlegen() {
 		YoolooKarte[] neueSortierung = new YoolooKarte[this.aktuelleSortierung.length];
 		for (int i = 0; i < neueSortierung.length; i++) {
-			neueSortierung[i] = new YoolooKarte(Kartenfarbe.Blau,10);
+			neueSortierung[i] = new YoolooKarte(spielfarbe,10);
 			}
 			// System.out.println(i+ ". neuerIndex: "+neuerIndex);
 		
