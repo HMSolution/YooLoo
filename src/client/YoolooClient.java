@@ -39,6 +39,8 @@ public class YoolooClient {
 	public static final String ANSI_RED = "\u001B[31m";
 	public static final String ANSI_GREEN = "\u001B[32m";
 
+	public boolean restart = false;
+
 	public YoolooClient() {
 		super();
 	}
@@ -222,11 +224,13 @@ public class YoolooClient {
 						if(abortionMessage.getServerMessageType() == ServerMessageType.SERVERMESSAGE_NOTIFY_CHEAT)
 						{
 						      System.out.println(ANSI_RED + "[ALERT] => Leider hat jemand geschummelt, der Spieler wurde aus der Sitzung ausgeschlossen."
-						      		+ " Die Sitzung wird zurückgesetzt. [ALERT]" + ANSI_RESET);
-						      startClient();
+									  + " Die Sitzung wird zurückgesetzt. [ALERT]" + ANSI_RESET);
+							  restart = true;
+							  System.exit(0);
 						}else
 						{
 							System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState + "] : " + ANSI_RED + "[ALERT] => Du bist beim Cheaten erwischt worden. Deswegen wirst du aus der Sitzung ausgeschlossen! [ALERT]" + ANSI_RESET);
+							restart = false;
 							System.exit(0);
 						}
 					}
