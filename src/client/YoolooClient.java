@@ -4,6 +4,11 @@
 
 package client;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -11,8 +16,22 @@ import java.util.Scanner;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collector;
+
+import javax.swing.plaf.basic.BasicScrollPaneUI.HSBChangeListener;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+import com.google.gson.Gson;
 
 import common.LoginMessage;
+import common.YoolooKarte;
 import common.YoolooKartenspiel;
 import common.YoolooSpieler;
 import common.YoolooStich;
@@ -34,7 +53,11 @@ public class YoolooClient {
 	private LoginMessage newLogin = null;
 	private YoolooSpieler meinSpieler;
 	private YoolooStich[] spielVerlauf = null;
-
+	private List<Spielzug> spielHistorie = new ArrayList<>();
+	public final static String historiePfad = "Spielhistorie.json";
+	private JsonService jsonService = new JsonService(historiePfad);
+	private Gson gson = new Gson();
+	
 	public YoolooClient() {
 		super();
 	}
@@ -50,7 +73,7 @@ public class YoolooClient {
 	 * Diese terminiert wenn das Spiel oder die Verbindung beendet wird.
 	 */
 	public void startClient() {
-
+		
 		try {
 			// Lese Namen aus stdin //
 			boolean nameNotLongEnough = false;
@@ -184,13 +207,36 @@ public class YoolooClient {
 		spielVerlauf[stichNummer] = iStich;
 		System.out.println("[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState
 				+ "] : Empfange Stich " + iStich);
+		
+		boolean stichGewonnen = false;
 		if (iStich.getSpielerNummer() == meinSpieler.getClientHandlerId()) {
 			System.out.print(
 					"[id-" + meinSpieler.getClientHandlerId() + "]ClientStatus: " + clientState + "] : Gewonnen - ");
 			meinSpieler.erhaeltPunkte(iStich.getStichNummer() + 1);
+			stichGewonnen = true;
 		}
-
+		
+		YoolooKarte meineKarte =  Arrays.stream(iStich.getStich()).filter(k -> k.getFarbe() == meinSpieler.getSpielfarbe()).findFirst().get();
+		Spielzug spielzug = new Spielzug(iStich.getStichNummer(), meineKarte.getWert(), stichGewonnen);
+		SpielzugAbspeichern(spielzug);
 	}
+
+	private void SpielzugAbspeichern(Spielzug spielzug) {
+		List<Spielzug> historie = jsonService.LiesDatei();
+		if(historie == null)
+			return;
+		
+		historie.add(spielzug);
+		String json = gson.toJson(historie);
+        try (FileWriter file = new FileWriter(historiePfad, false)) {
+        	file.write(json);
+            file.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+
+
 
 	private void spieleKarteAus(int i) throws IOException {
 		oos.writeObject(meinSpieler.getAktuelleSortierung()[i]);
