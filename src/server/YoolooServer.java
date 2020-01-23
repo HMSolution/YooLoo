@@ -152,8 +152,8 @@ public class YoolooServer {
 	public void sendCheatMessageToAllClients()
 	{
 		ServerMessage notificationForPlayerCheating = new ServerMessage(ServerMessageType.SERVERMESSAGE_NOTIFY_CHEAT,
-				ClientState.CLIENTSTATE_NULL,
-				ServerMessageResult.SERVER_MESSAGE_RESULT_OK);
+				ClientState.CLIENTSTATE_DISCONNECT,
+				null);
 	   for(int i = 0; i < clientHandlerList.size(); i++)
 	   {
 		   	SocketUtils.sendSerialized(clientHandlerList.get(i).getSocket(), notificationForPlayerCheating);
