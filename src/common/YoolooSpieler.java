@@ -146,13 +146,23 @@ public class YoolooSpieler implements Serializable {
 				if(besterUngespielteStich == null)
 					besterUngespielteStich = se;
 						
-				if(besterUngespielteStich.getAnzahlGespielterStiche() >= se.getAnzahlGespielterStiche())
+				if(besterUngespielteStich.getStichNummer() >= se.getStichNummer())
 					besterUngespielteStich = se;
 			}
 			return besterUngespielteStich.getStichNummer();
 		}
 
-		return besterStich.getStichNummer();
+		StichErfolg amWenigstenGespielterStich = null;
+		for(StichErfolg se : ausgewerteteStiche)
+		{
+			if(amWenigstenGespielterStich == null)
+				amWenigstenGespielterStich = se;
+					
+			if(amWenigstenGespielterStich.getAnzahlGespielterStiche() > se.getAnzahlGespielterStiche())
+				amWenigstenGespielterStich = se;
+		}
+				
+		return amWenigstenGespielterStich.getStichNummer();
 
 	}
 
