@@ -7,15 +7,19 @@ package server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.util.LinkedHashMap;
 import java.util.ArrayList;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import client.YoolooClient.ClientState;
 import common.YoolooKartenspiel;
 import messages.ServerMessage;
-import messages.ServerMessage.ServerMessageResult;
 import messages.ServerMessage.ServerMessageType;
 import utils.SocketUtils;
+import client.YoolooClient;
+
 
 public class YoolooServer {
 
@@ -37,9 +41,10 @@ public class YoolooServer {
 	private ServerSocket serverSocket = null;
 	public boolean serverAktiv = true;
 	SocketUtils socketUtils = new SocketUtils();
+	private LinkedHashMap<String, ArrayList<Integer>> cardMap = new LinkedHashMap<>();
 
-	// private ArrayList<Thread> spielerThreads;
-	private ArrayList<YoolooClientHandler> clientHandlerList;
+	
+	private LinkedHashMap<String, YoolooClientHandler> clientHandlerList;
 
 	private ExecutorService spielerPool;
 
@@ -69,7 +74,7 @@ public class YoolooServer {
 			// Init
 			serverSocket = new ServerSocket(port);
 			spielerPool = Executors.newCachedThreadPool();
-			clientHandlerList = new ArrayList<YoolooClientHandler>();
+			clientHandlerList = new LinkedHashMap<String, YoolooClientHandler>();
 			System.out.println("Server gestartet - warte auf Spieler");
 
 			while (serverAktiv) {
@@ -78,9 +83,24 @@ public class YoolooServer {
 				// Neue Spieler registrieren
 				try {
 					client = serverSocket.accept();
-					YoolooClientHandler clientHandler = new YoolooClientHandler(this, client);
-					clientHandlerList.add(clientHandler);
-					System.out.println("[YoolooServer] Anzahl verbundene Spieler: " + clientHandlerList.size());
+					String IP = ((InetSocketAddress) client.getRemoteSocketAddress()).getAddress().toString();
+					
+					if(!this.clientHandlerList.containsKey(IP)){
+						YoolooClientHandler clientHandler = new YoolooClientHandler(this, client);
+						clientHandlerList.put(IP, clientHandler);
+						System.out.println("[YoolooServer] Anzahl verbundene Spieler: " + clientHandlerList.size());
+					}else{
+						System.out.println("[YoolooServer] " + IP + " ist bereits angemeldet, lehne Verbindung ab.");
+						ServerMessage loginErr = new ServerMessage(
+													ServerMessage.ServerMessageType.SERVERMESSAGE_ALREADY_LOGGED_IN, 
+													YoolooClient.ClientState.CLIENTSTATE_DISCONNECTED,
+													ServerMessage.ServerMessageResult.SERVER_MESSAGE_RESULT_NOT_OK	
+												);
+						SocketUtils.sendSerialized(client, loginErr);
+						client.close();
+					}
+
+
 				} catch (IOException e) {
 					System.out.println("Client Verbindung gescheitert");
 					e.printStackTrace();
@@ -93,12 +113,14 @@ public class YoolooServer {
 					// Init Session
 					YoolooSession yoolooSession = new YoolooSession(clientHandlerList.size(), serverGameMode);
 
-					// Starte pro Client einen ClientHandlerTread
-					for (int i = 0; i < clientHandlerList.size(); i++) {
-						YoolooClientHandler ch = clientHandlerList.get(i);
+					// Starte pro Client einen ClientHandlerThread
+					int i = 0;
+					for (Entry<String, YoolooClientHandler> ent : this.clientHandlerList.entrySet()) {
+						YoolooClientHandler ch = ent.getValue();
 						ch.setHandlerID(i);
 						ch.joinSession(yoolooSession);
 						spielerPool.execute(ch); // Start der ClientHandlerThread - Aufruf der Methode run()
+						i++;
 					}
 
 					try {
@@ -108,17 +130,18 @@ public class YoolooServer {
 						e.printStackTrace();
 					}
 					
-					for(YoolooClientHandler handler : clientHandlerList)
-					{
-						//prüfen ob in den Handlern gecheatet wurde
-						//entsprechend wird ein Restart eingeleitet
+					for(Entry<String, YoolooClientHandler> ent : this.clientHandlerList.entrySet()) {
+						YoolooClientHandler handler = ent.getValue();
 						if(handler.cheated)
 						serverAktiv = false;
 						restart = true;
+						//prüfen ob in den Handlern gecheatet wurde
+						//entsprechend wird ein Restart eingeleitet
+						
 					}
 
 					// nuechste Runde eroeffnen
-					clientHandlerList = new ArrayList<YoolooClientHandler>();
+					clientHandlerList = new LinkedHashMap<String, YoolooClientHandler>();
 				}
 			}
 			EndSession(543210);
@@ -154,9 +177,9 @@ public class YoolooServer {
 		ServerMessage notificationForPlayerCheating = new ServerMessage(ServerMessageType.SERVERMESSAGE_NOTIFY_CHEAT,
 				ClientState.CLIENTSTATE_DISCONNECT,
 				null);
-	   for(int i = 0; i < clientHandlerList.size(); i++)
-	   {
-		   	SocketUtils.sendSerialized(clientHandlerList.get(i).getSocket(), notificationForPlayerCheating);
+
+	   for(Entry<String, YoolooClientHandler> ent : this.clientHandlerList.entrySet()) {
+		SocketUtils.sendSerialized(ent.getValue().getSocket(), notificationForPlayerCheating);
 	   }
 	}
 
@@ -168,6 +191,18 @@ public class YoolooServer {
 			spielerPool.shutdown();
 		} else {
 			System.out.println("Servercode falsch");
+		}
+	}
+	public void saveCardOrder(ArrayList<Integer> order, String clientName) {
+		System.out.println("[~] Speichere Kartenabfolge für " + clientName);
+		cardMap.put(clientName, order);
+	}
+	public ArrayList<Integer> getCardOrder(String clientName) {
+		if(this.cardMap.containsKey(clientName)){
+			System.out.println("[>] " + clientName + " ist bekannt, sende letzte Kartenreihenfolge.");
+			return this.cardMap.get(clientName);
+		}else{
+			return new ArrayList<Integer>();
 		}
 	}
 }

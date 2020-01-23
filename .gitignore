@@ -3,3 +3,8 @@ build_cmds
 bin/
 bin\
 *.class
+/Spielhistorie1.json
+/Spielhistorie.json
+build_cmds
+.vscode
+bin/

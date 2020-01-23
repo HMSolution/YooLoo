@@ -81,11 +81,22 @@ public class YoolooKartenspiel {
 	 * @param spielerName
 	 * @return
 	 */
-	public YoolooSpieler spielerRegistrieren(YoolooSpieler neuerSpieler) {
+	public YoolooSpieler spielerRegistrieren(YoolooSpieler neuerSpieler, ArrayList<Integer> cardList) {
 		Kartenfarbe[] farben = Kartenfarbe.values();
 		neuerSpieler.setSpielfarbe(farben[neuerSpieler.getClientHandlerId()]);
-		YoolooKarte[] kartenDesSpielers = spielkarten[neuerSpieler.getClientHandlerId()];
-		neuerSpieler.setAktuelleSortierung(kartenDesSpielers);
+
+		YoolooKarte[] Karten = new YoolooKarte[10];
+		if(cardList.size() > 0){
+			for(int i = 0; i < Karten.length; i++) {
+				Karten[i] = new YoolooKarte(farben[neuerSpieler.getClientHandlerId()], cardList.get(i));
+			}			
+		}else{
+			/*   Benutzer hatte bis dato noch nie gespielt.   */
+			Karten = spielkarten[neuerSpieler.getClientHandlerId()];
+		}
+
+
+		neuerSpieler.setAktuelleSortierung(Karten);
 		this.spielerliste.add(neuerSpieler); // nur fuer Simulation noetig!
 		System.out.println("Debug; Spielerobject registriert als : " + neuerSpieler);
 		return neuerSpieler;

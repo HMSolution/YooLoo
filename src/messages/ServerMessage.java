@@ -31,6 +31,7 @@ public class ServerMessage implements Serializable {
 	 */
 	public enum ServerMessageType {
 		SERVERMESSAGE_ACKNOWLEDGE, // t.b.d.
+		SERVERMESSAGE_ALREADY_LOGGED_IN, // Wird gesendet, wenn der Client bereits eingeloggt ist
 		SERVERMESSAGE_SENDLOGIN, // Übermittle registierten Spieler zurueck an Client
 		SERVERMESSAGE_SORT_CARD_SET, // Spieler legen Ihre Sortierung fest
 		SERVERMESSAGE_SEND_CARD, // Karten werden an Spieler ausgegeben
