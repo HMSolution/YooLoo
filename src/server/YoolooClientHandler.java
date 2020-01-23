@@ -126,7 +126,7 @@ public class YoolooClientHandler extends Thread {
 								break;
 							}else {
 								System.out.println(ANSI_GREEN + "[ClientHandler" + clientHandlerId + "] [VALID] => Played card has been verified [VALID]" + ANSI_RESET);
-								meinSpieler.gespielteKarteHinzufügen(neueKarte);								
+								meinSpieler.gespielteKarteHinzufuegen(neueKarte);								
 							}			
 							Karten.add(neueKarte.getWert());
 							YoolooStich currentstich = spieleKarte(stichNummer, neueKarte);

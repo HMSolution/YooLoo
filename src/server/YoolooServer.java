@@ -17,7 +17,7 @@ import client.YoolooClient.ClientState;
 import common.YoolooKartenspiel;
 import messages.ServerMessage;
 import messages.ServerMessage.ServerMessageType;
-import utils.SocketUtils;
+import utils.Socketutils;
 import client.YoolooClient;
 
 
@@ -96,7 +96,7 @@ public class YoolooServer {
 													YoolooClient.ClientState.CLIENTSTATE_DISCONNECTED,
 													ServerMessage.ServerMessageResult.SERVER_MESSAGE_RESULT_NOT_OK	
 												);
-						SocketUtils.sendSerialized(client, loginErr);
+						Socketutils.sendSerialized(client, loginErr);
 						client.close();
 					}
 
@@ -179,7 +179,7 @@ public class YoolooServer {
 				null);
 
 	   for(Entry<String, YoolooClientHandler> ent : this.clientHandlerList.entrySet()) {
-		SocketUtils.sendSerialized(ent.getValue().getSocket(), notificationForPlayerCheating);
+		Socketutils.sendSerialized(ent.getValue().getSocket(), notificationForPlayerCheating);
 	   }
 	}
 

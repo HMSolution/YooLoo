@@ -8,3 +8,8 @@ bin\
 build_cmds
 .vscode
 bin/
+bin/allgemein/StarterClient.class
+bin/common/YoolooKartenspiel.class
+bin/common/YoolooSpieler.class
+bin/server/YoolooClientHandler.class
+bin/server/YoolooClientHandler$ServerState.class

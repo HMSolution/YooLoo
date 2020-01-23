@@ -9,9 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
 import org.json.simple.JSONArray;
-
 import client.JsonService;
 import client.Spielzug;
 import client.StichErfolg;
@@ -255,7 +253,7 @@ public class YoolooSpieler implements Serializable {
 		System.out.println(stich.toString());
 	}
 	
-	public void gespielteKarteHinzufügen(YoolooKarte karte)
+	public void gespielteKarteHinzufuegen(YoolooKarte karte)
 	{
 		gespielteNummern.add(karte.getWert());
 	}
