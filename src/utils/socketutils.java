@@ -5,7 +5,7 @@ import java.io.ObjectOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-public class socketutils {
+public class SocketUtils {
 
     public static void sendSerialized(Socket s, Serializable object) {
         try {
