@@ -20,6 +20,7 @@ import common.YoolooKarte;
 import common.YoolooKartenspiel;
 import common.YoolooSpieler;
 import common.YoolooStich;
+import extensions.LoggerWrapper;
 import messages.ClientMessage;
 import messages.ServerMessage;
 import messages.ServerMessage.ServerMessageResult;
@@ -47,6 +48,7 @@ public class YoolooClientHandler extends Thread {
 	public static final String ANSI_GREEN = "\u001B[32m";
 
 	public boolean cheated = false;
+	private LoggerWrapper loggerWrapper = new LoggerWrapper("Clienthandler");
 
 	public YoolooClientHandler(YoolooServer yoolooServer, Socket clientSocket) {
 		this.myServer = yoolooServer;
@@ -77,14 +79,16 @@ public class YoolooClientHandler extends Thread {
 		try {
 			state = ServerState.ServerState_CONNECT; // Verbindung zum Client aufbauen
 			verbindeZumClient();
+			loggerWrapper.logInfoString("[CLIENTHANDLER-LOG]: Verbindung zum Client wird aufgebaut.");
 
 			state = ServerState.ServerState_REGISTER; // Abfragen der Spieler LoginMessage
 			sendeKommando(ServerMessageType.SERVERMESSAGE_SENDLOGIN, ClientState.CLIENTSTATE_LOGIN, null);
-
+			loggerWrapper.logInfoString("[CLIENTHANDLER-LOG]: Spieler LoginMessage wird abgefragt");
 			Object antwortObject = null;
 			while (this.state != ServerState.ServerState_DISCONNECTED) {
 				// Empfange Spieler als Antwort vom Client
 				antwortObject = empfangeVomClient();
+				loggerWrapper.logInfoString("[CLIENTHANDLER-" + clientHandlerId + "+LOG]: Spieler wurde als Antwort von Client empfangen");
 				if (antwortObject instanceof ClientMessage) {
 					ClientMessage message = (ClientMessage) antwortObject;
 					System.out.println("[ClientHandler" + clientHandlerId + "] Nachricht Vom Client: " + message);
@@ -98,6 +102,7 @@ public class YoolooClientHandler extends Thread {
 						meinSpieler = new YoolooSpieler(newLogin.getSpielerName(), YoolooKartenspiel.maxKartenWert);
 						meinSpieler.setClientHandlerId(clientHandlerId);
 						registriereSpielerInSession(meinSpieler);
+						loggerWrapper.logInfoString("[CLIENTHANDLER-"+clientHandlerId+"-LOG]: Neuer Spieler in Runde wird registiert");
 						oos.writeObject(meinSpieler);
 						sendeKommando(ServerMessageType.SERVERMESSAGE_SORT_CARD_SET, ClientState.CLIENTSTATE_SORT_CARDS,
 								null);
@@ -161,6 +166,7 @@ public class YoolooClientHandler extends Thread {
 					}else{
 						sendeKommando(ServerMessageType.SERVERMESSAGE_CHANGE_STATE, ClientState.CLIENTSTATE_DISCONNECTED, null);
 						//sendeKommando(ServerMessageType.SERVERMESSAGE_RESULT_SET, ClientState.CLIENTSTATE_DISCONNECTED,	null);
+						loggerWrapper.logInfoString("[CLIENTHANDLER-LOG]: Ergebnis gesendet");
 						oos.writeObject(session.getErgebnis());
 						this.state = ServerState.ServerState_DISCONNECTED;
 					}
@@ -171,6 +177,7 @@ public class YoolooClientHandler extends Thread {
 					break;
 				default:
 					System.out.println("Undefinierter Serverstatus - tue mal nichts!");
+					loggerWrapper.logWarningString("[CLIENTHANDLER-LOG]: Undefinierter Serverstatus");
 				}
 			}
 		} catch (EOFException e) {
@@ -181,6 +188,7 @@ public class YoolooClientHandler extends Thread {
 			e.printStackTrace();
 		} finally {
 			System.out.println("[ClientHandler" + clientHandlerId + "] Verbindung zu " + socketAddress + " beendet");
+			loggerWrapper.logInfoString("[CLIENTHANDLER-LOG]: Die Verbindung wird beendet");
 		}
 	}
 
@@ -190,6 +198,7 @@ public class YoolooClientHandler extends Thread {
 				paramInt);
 		System.out.println("[ClientHandler" + clientHandlerId + "] Sende Kommando: " + kommandoMessage.toString());
 		oos.writeObject(kommandoMessage);
+		loggerWrapper.logInfoString("[CLIENTHANDLER" + clientHandlerId + "-LOG]: sendet Komando message");
 	}
 
 	private void sendeKommando(ServerMessageType serverMessageType, ClientState clientState,
@@ -197,6 +206,7 @@ public class YoolooClientHandler extends Thread {
 		ServerMessage kommandoMessage = new ServerMessage(serverMessageType, clientState, serverMessageResult);
 		System.out.println("[ClientHandler" + clientHandlerId + "] Sende Kommando: " + kommandoMessage.toString());
 		oos.writeObject(kommandoMessage);
+		loggerWrapper.logInfoString("[CLIENTHANDLER" + clientHandlerId + "-LOG]: sendet Komando message");
 	}
 
 	private void verbindeZumClient() throws IOException {
@@ -204,9 +214,11 @@ public class YoolooClientHandler extends Thread {
 		ois = new ObjectInputStream(clientSocket.getInputStream());
 		System.out.println("[ClientHandler  " + clientHandlerId + "] Starte ClientHandler fuer: "
 				+ clientSocket.getInetAddress() + ":->" + clientSocket.getPort());
+		loggerWrapper.logInfoString("[CLIENTHANDLER" + clientHandlerId + "-LOG]: Startet ClientHandler" + clientSocket.getInetAddress() + ":->" + clientSocket.getPort());
 		socketAddress = clientSocket.getRemoteSocketAddress();
 		System.out.println("[ClientHandler" + clientHandlerId + "] Verbindung zu " + socketAddress + " hergestellt");
 		oos.flush();
+		loggerWrapper.logInfoString("[CLIENTHANDLER" + clientHandlerId + "-LOG]: Verbindung zu " + socketAddress + " wird hergestellt ");
 	}
 
 	private Object empfangeVomClient() {
@@ -229,6 +241,8 @@ public class YoolooClientHandler extends Thread {
 		ArrayList<Integer> KartenReihenfolge = this.myServer.getCardOrder(this.meinSpieler.getName());
 
 		session.getAktuellesSpiel().spielerRegistrieren(meinSpieler, KartenReihenfolge);
+		loggerWrapper.logInfoString("[CLIENTHANDLER" + clientHandlerId + "-LOG]: Spieler in Session registriert " + meinSpieler.getName());
+
 	}
 
 	/**
@@ -245,6 +259,7 @@ public class YoolooClientHandler extends Thread {
 		System.out.println("[ClientHandler" + clientHandlerId + "] spiele Stich Nr: " + stichNummer
 				+ " KarteKarte empfangen: " + empfangeneKarte.toString());
 		session.spieleKarteAus(clientHandlerId, stichNummer, empfangeneKarte);
+		loggerWrapper.logInfoString("[CLIENTHANDLER" + clientHandlerId + "-LOG]: Spieler Nummer: " + stichNummer + " KarteKarte empfangen: " + empfangeneKarte.toString());
 		// ausgabeSpielplan(); // Fuer Debuginformationen sinnvoll
 		while (aktuellerStich == null) {
 			try {
@@ -266,6 +281,7 @@ public class YoolooClientHandler extends Thread {
 
 	public void ausgabeSpielplan() {
 		System.out.println("Aktueller Spielplan");
+		loggerWrapper.logInfoString("[CLIENTHANDLER" + clientHandlerId + "-LOG]: Aktueller Spielplan ");
 		for (int i = 0; i < session.getSpielplan().length; i++) {
 			for (int j = 0; j < session.getSpielplan()[i].length; j++) {
 				System.out.println("[ClientHandler" + clientHandlerId + "][i]:" + i + " [j]:" + j + " Karte: "

@@ -10,11 +10,12 @@ import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.json.simple.JSONArray;
-import client.JsonService;
-import client.Spielzug;
-import client.StichErfolg;
+
 import client.YoolooClient;
 import common.YoolooKartenspiel.Kartenfarbe;
+import extensions.JsonService;
+import extensions.Spielzug;
+import extensions.StichErfolg;
 
 public class YoolooSpieler implements Serializable {
 

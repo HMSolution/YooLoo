@@ -13,3 +13,4 @@ bin/common/YoolooKartenspiel.class
 bin/common/YoolooSpieler.class
 bin/server/YoolooClientHandler.class
 bin/server/YoolooClientHandler$ServerState.class
+/ServerLog.txt
