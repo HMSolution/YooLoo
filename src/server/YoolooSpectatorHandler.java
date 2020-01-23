@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import client.YoolooClient.ClientState;
 import common.YoolooKarte;
@@ -65,7 +67,7 @@ public class YoolooSpectatorHandler implements Runnable {
                     // Sobald die Runde vorbei ist schickt er die Stiche als Antwort
                     // kein "wahrer" Zuschauermodus, aber er ist funktional
                     //socketutils.sendSerialized(this.clientConnection, stiche);
-                    oos.writeObject(stiche);
+                    oos.writeObject(new ArrayList<>(Arrays.asList(stiche)));
                     oos.flush();
 
                     // Warte auf Antwort bevor die Verbindung geschlossen wird

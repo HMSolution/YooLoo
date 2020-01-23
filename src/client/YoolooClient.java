@@ -8,7 +8,11 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.Map.Entry;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -59,29 +63,27 @@ public class YoolooClient {
 	public void startClient() {
 
 		try {
-			if(this.clientMode == ClientMode.CLIENTMODE_SPECTATOR)
+			if (this.clientMode == ClientMode.CLIENTMODE_SPECTATOR)
 				System.out.println("Starte Client im Zuschauermodus - funktioniert nicht mit älteren Servern!");
 			// Lese Namen aus stdin //
 			/*
-			boolean failedOnce = false;
-			System.out.println("Bitte gebe zunächst deinen Namen an:");
-			Scanner temporary = new Scanner(System.in);
-			
-			while(this.spielerName.length() < 4){
-				if(failedOnce) System.out.println("Dein Name muss mindestens 4 Zeichen lang sein.");
-				System.out.print(">> "); 
-				this.spielerName = temporary.nextLine();
-				failedOnce = true;	
-			}
-
-			System.out.println("Bitte gebe die Server IP/Hostname ein:");
-			System.out.print(">> ");
-			this.serverHostname = temporary.nextLine();
-
-
-			System.out.println("Logge als " + this.spielerName + " ein");
-
-			temporary.close();*/
+			 * boolean failedOnce = false;
+			 * System.out.println("Bitte gebe zunächst deinen Namen an:"); Scanner temporary
+			 * = new Scanner(System.in);
+			 * 
+			 * while(this.spielerName.length() < 4){ if(failedOnce)
+			 * System.out.println("Dein Name muss mindestens 4 Zeichen lang sein.");
+			 * System.out.print(">> "); this.spielerName = temporary.nextLine(); failedOnce
+			 * = true; }
+			 * 
+			 * System.out.println("Bitte gebe die Server IP/Hostname ein:");
+			 * System.out.print(">> "); this.serverHostname = temporary.nextLine();
+			 * 
+			 * 
+			 * System.out.println("Logge als " + this.spielerName + " ein");
+			 * 
+			 * temporary.close();
+			 */
 			this.spielerName = Long.toString(System.currentTimeMillis());
 			this.serverHostname = "localhost";
 			//////////////////////////
@@ -93,7 +95,8 @@ public class YoolooClient {
 				// 1. Schritt Kommado empfangen
 				ServerMessage kommandoMessage = empfangeKommando();
 				System.out.println("[id-x]ClientStatus: " + clientState + "] " + kommandoMessage.toString());
-				if(kommandoMessage.getServerMessageType() == ServerMessage.ServerMessageType.SERVERMESSAGE_ALREADY_LOGGED_IN){
+				if (kommandoMessage
+						.getServerMessageType() == ServerMessage.ServerMessageType.SERVERMESSAGE_ALREADY_LOGGED_IN) {
 					System.out.println("Du bist bereits eingeloggt!");
 					System.exit(0);
 				}
@@ -106,37 +109,56 @@ public class YoolooClient {
 				switch (kommandoMessage.getServerMessageType()) {
 				case SERVERMESSAGE_SENDLOGIN:
 					// Server fordert Useridentifikation an
-					
+
 					newLogin = new LoginMessage(spielerName);
 					System.out.println("Sende LoginMessage an Server");
 					oos.writeObject(newLogin);
 					empfangeSpieler();
-					/*System.out.println("[id-x]ClientStatus: " + clientState + "] : LoginMessage fuer  " + spielerName
-							+ " an server gesendet warte auf Spielerdaten");
-					empfangeSpieler();
-					// ausgabeKartenSet();
-					*/
+					/*
+					 * System.out.println("[id-x]ClientStatus: " + clientState +
+					 * "] : LoginMessage fuer  " + spielerName +
+					 * " an server gesendet warte auf Spielerdaten"); empfangeSpieler(); //
+					 * ausgabeKartenSet();
+					 */
 					break;
 				case SERVERMESSAGE_PREPARE_EVENT_LOOP:
-					System.out.println("[*] Bereite Event-Loop zum Empfangen aller Stiche vor");
-					System.out.println("Socket State: " + (this.serverSocket.isClosed() ? "closed" : "open"));
+					System.out.println("[*] Warte auf Spielzusammenfassung");
 
-					// Führe Schleife bis zum Empfangen des Ergebnisses aus
-					System.out.println(this.serverSocket.toString());
-					YoolooStich[] stiche = socketutils.receive(this.serverSocket);
-					// Sende Server die Bestätigung, dass die Stiche angekommen sind und beende die Verbindung 
-					socketutils.sendSerialized(this.serverSocket, new ClientMessage(ClientMessageType.ClientMessage_OK, "SYN"));
-					
-					for(int i = 0; i < stiche.length; i++) {
-						System.out.println("Stich #"+stiche[i].getStichNummer());
-						for(YoolooKarte karte : stiche[i].getStich()){
+					// Lese Spielzusammenfassung vom Server
+					ArrayList<YoolooStich> stiche = new ArrayList<>();
+					try {stiche = (ArrayList<YoolooStich>) ois.readObject();} catch (ClassNotFoundException e) {e.printStackTrace();}
+					// Da der Server kein RESULT_SET sendet, erstellen wir unser eigenes, der String ist die Farbe während die Punkte im Integer gespeichert sind
+					LinkedHashMap<String, Integer> Punkte = new LinkedHashMap<String, Integer>();
+
+					int bonus = 0;
+					for(int i = 0; i < stiche.size(); i++) {
+						System.out.println("Stich #" + (stiche.get(i).getStichNummer()+1));
+						for(YoolooKarte karte : stiche.get(i).getStich()){
 							System.out.println("[~] " + karte.getFarbe() + " spielt " + karte.getWert());
 						}
-						System.out.println(stiche[i].getSpielerNummer() + " hat den Stich gewonnen");
+						if(stiche.get(i).getSpielerNummer() == -1){
+							System.out.println("Alle Spieler haben die selbe Karte gespielt, die Punkte gehen als Bonuspunkte in die nächste Runde mit über");
+							bonus = i + 1;
+						}else {
+							// Farbe des gewinners ermitteln
+							String COLOR_NAME = YoolooKartenspiel.Kartenfarbe.values()[stiche.get(i).getSpielerNummer()].toString();
+							System.out.println(COLOR_NAME + " hat den Stich gewonnen");
+							// colorPoints sind die Punkte die der Spieler bereits hat, wir updaten also Spieler Punkte + Punkte diese Runde + Bonus
+							int colorPoints = Punkte.containsKey(COLOR_NAME) ? Punkte.get(COLOR_NAME) : 0;
+							Punkte.put(COLOR_NAME, ((colorPoints + (i + 1)) + bonus));
+							bonus = 0;
+						}
 						System.out.println("------------------");
 					}
-						
-						
+					
+					// Ermittle Spieler mit den meisten Punkten
+					Entry<String, Integer> Winner = null;
+					for(Entry<String, Integer> curPlayer : Punkte.entrySet()) {
+						if(Winner == null || curPlayer.getValue() > Winner.getValue()) Winner = curPlayer;
+					}
+					
+					System.out.println(Winner.getKey() + " hat das Spiel mit " + Winner.getValue() + " Punkten gewonnen!");
+
 					System.exit(0);
 
 				case SERVERMESSAGE_SORT_CARD_SET:

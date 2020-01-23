@@ -14,7 +14,7 @@ public class StarterServer {
 
 	public static void main(String[] args) {
 		int listeningPort = 44137;
-		int spieleranzahl = 1; // min 1, max Anzahl definierte Farben in Enum YoolooKartenSpiel.KartenFarbe)
+		int spieleranzahl = 2; // min 1, max Anzahl definierte Farben in Enum YoolooKartenSpiel.KartenFarbe)
 		
 		// Threadpool für Spectator/Client Sockets
 		ExecutorService socketPool = Executors.newCachedThreadPool();;
