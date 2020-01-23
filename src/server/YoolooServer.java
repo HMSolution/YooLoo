@@ -6,9 +6,6 @@ package server;
 
 import java.io.IOException; 
 import java.util.logging.*;
-
-import Logger.LoggerWrapper;
-
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetSocketAddress;
@@ -19,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import client.YoolooClient.ClientState;
 import common.YoolooKartenspiel;
+import extensions.LoggerWrapper;
 import messages.ServerMessage;
 import messages.ServerMessage.ServerMessageType;
 import utils.Socketutils;

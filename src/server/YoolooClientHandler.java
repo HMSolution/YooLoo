@@ -14,13 +14,13 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 
-import Logger.LoggerWrapper;
 import client.YoolooClient.ClientState;
 import common.LoginMessage;
 import common.YoolooKarte;
 import common.YoolooKartenspiel;
 import common.YoolooSpieler;
 import common.YoolooStich;
+import extensions.LoggerWrapper;
 import messages.ClientMessage;
 import messages.ServerMessage;
 import messages.ServerMessage.ServerMessageResult;
